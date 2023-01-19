@@ -31,6 +31,17 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
         }
         result
     }
+
+    pub fn transpose(&self) -> Matrix<C, R> {
+        let mut result = Matrix::default();
+        for i in 0..R {
+            for j in 0..C {
+                result[j][i] = self[i][j];
+            }
+        }
+        result
+    }
+
 }
 
 impl<const R: usize, const C: usize> AsRef<[[f64; C]; R]> for Matrix<R, C> {
@@ -156,6 +167,15 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
                 self[i][j] *= scaler;
             }
         }
+    }
+}
+
+impl<const R: usize, const C: usize> std::fmt::Display for Matrix<R, C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for i in 0..R {
+            writeln!(f, "{:?}", self[i])?;
+        }
+        Ok(())
     }
 }
 
@@ -323,4 +343,26 @@ mod tests {
         assert_eq!(f[1][1], 40.0);
     }
 
+    #[test]
+    fn test_transpose() {
+        let a = Matrix::<3, 3>::new(
+            [
+                [1.0, 2.0, 3.0],
+                [4.0, 5.0, 6.0],
+                [7.0, 8.0, 9.0],
+            ]
+        );
+
+        let b = a.transpose();
+        assert_eq!(b, Matrix::<3, 3>::new(
+            [
+                [1.0, 4.0, 7.0],
+                [2.0, 5.0, 8.0],
+                [3.0, 6.0, 9.0],
+            ]
+        ));
+
+        let c = b.transpose();
+        assert_eq!(c, a);
+    }
 }

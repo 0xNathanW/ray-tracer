@@ -1,4 +1,5 @@
-use crate::vec3::{Colour, Vec3};
+use crate::vec3::Vec3;
+use crate::colour::Colour;
 use crate::ray::Ray;
 use crate::object::HitRecord;
 

@@ -1,4 +1,6 @@
-use crate::vec3::Colour;
+use crate::vec3::Vec3;
+
+pub type Colour = Vec3;
 
 pub fn write_colour(pixel_colour: Colour, num_samples: usize) {
     

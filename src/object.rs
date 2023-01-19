@@ -2,7 +2,9 @@ use std::rc::Rc;
 use crate::material::{Material, Lambertian, Metal, Dielectric};
 use crate::ray::Ray;
 use crate::sphere::Sphere;
-use crate::vec3::{Point3, Vec3, Colour};
+use crate::vec3::Vec3;
+use crate::point3::Point3;
+use crate::colour::Colour;
 
 #[derive(Default)]
 pub struct HitRecord {

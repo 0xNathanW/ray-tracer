@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::vec3::Point3;
+use crate::point3::Point3;
 use crate::object::{Object, HitRecord};
 use crate::material::Material;
 use crate::ray::Ray;

@@ -1,6 +1,8 @@
 use ray_tracer::camera::Camera;
 use ray_tracer::object::{HitRecord, Object, ObjectList};
-use ray_tracer::vec3::{Colour, Point3, Vec3};
+use ray_tracer::vec3::Vec3;
+use ray_tracer::point3::Point3;
+use ray_tracer::colour::Colour;
 use ray_tracer::colour::write_colour;
 use ray_tracer::ray::Ray;
 

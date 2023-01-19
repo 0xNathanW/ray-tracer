@@ -7,15 +7,14 @@ use std::ops::{
 };
 use rand::Rng;
 
+use crate::matrix::Matrix;
+
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 { 
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
-
-pub type Point3 = Vec3;
-pub type Colour = Vec3;
 
 // Generate Vec3 methods.
 impl Vec3 {
@@ -73,6 +72,18 @@ impl Vec3 {
     }
 }
 
+impl Into<Matrix<1, 3> > for Vec3 {
+    fn into(self) -> Matrix<1, 3> {
+        Matrix::new([[self.x, self.y, self.z]])
+    }
+}
+
+impl Into<Matrix<3, 1> > for Vec3 {
+    fn into(self) -> Matrix<3, 1> {
+        Matrix::new([[self.x], [self.y], [self.z]])
+    }
+}
+
 // Vector operations.
 impl Vec3 {
 
@@ -109,6 +120,18 @@ impl Vec3 {
     pub fn near_zero(&self) -> bool {
         const S: f64 = 1e-8;
         (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S)
+    }
+}
+
+// Vector//Matrix operations.
+// Don't worry about translation, vectors are only used for direction.
+impl Vec3 {
+    pub fn transform_vec(&self, matrix: &Matrix<3, 3>) -> Vec3 {
+        let mut result = Vec3::default();
+        result.x = self.x * matrix[0][0] + self.y * matrix[1][0] + self.z * matrix[2][0];
+        result.y = self.x * matrix[0][1] + self.y * matrix[1][1] + self.z * matrix[2][1];
+        result.z = self.x * matrix[0][2] + self.y * matrix[1][2] + self.z * matrix[2][2];
+        result
     }
 }
 
