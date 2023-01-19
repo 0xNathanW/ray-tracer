@@ -62,11 +62,11 @@ impl Material for Metal {
             scattered: &mut Ray
     ) -> bool {
 
-        let reflected = Vec3::reflect(ray_in.direction.unit_vector(), hit_record.normal);
+        let reflected = Vec3::reflect(ray_in.direction.normalise(), hit_record.normal);
         // Set endpoint of scattered ray to be the reflected ray plus a random vector (random point in unit sphere).
         *scattered = Ray::new(hit_record.incidence_point, reflected + self.fuzz * Vec3::random_in_unit_sphere());
         *attenuation = self.albedo;
-        scattered.direction.dot(&hit_record.normal) > 0.0
+        scattered.direction.dot(hit_record.normal) > 0.0
     }
 }
 
@@ -96,9 +96,9 @@ impl Material for Dielectric {
 
         *attenuation = Colour::new(1.0, 1.0, 1.0);
         let refraction_ratio = if hit_record.front_face { 1.0 / self.refraction_idx } else { self.refraction_idx };
-        let unit_direction = ray_in.direction.unit_vector();
+        let unit_direction = ray_in.direction.normalise();
         
-        let cos_theta = ((-unit_direction).dot(&hit_record.normal)).min(1.0);
+        let cos_theta = ((-unit_direction).dot(hit_record.normal)).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         // If the refraction ratio is greater than the sin of the angle of incidence, then total internal reflection occurs.
         let direction = if 

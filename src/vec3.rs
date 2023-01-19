@@ -9,7 +9,7 @@ use rand::Rng;
 
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 { 
-    pub x: f64, 
+    pub x: f64,
     pub y: f64,
     pub z: f64,
 }
@@ -17,7 +17,9 @@ pub struct Vec3 {
 pub type Point3 = Vec3;
 pub type Colour = Vec3;
 
+// Generate Vec3 methods.
 impl Vec3 {
+
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
@@ -29,26 +31,6 @@ impl Vec3 {
     pub fn random_range(min: f64, max: f64) -> Self {
         let mut rng = rand::thread_rng();
         Self { x: rng.gen_range(min..max), y: rng.gen_range(min..max), z: rng.gen_range(min..max) }
-    }
-
-    pub fn length(&self) -> f64 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
-    }
-
-    pub fn squared_length(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
-    }
-
-    pub fn unit_vector(&self) -> Vec3 {
-        *self / self.length()
-    }
-
-    pub fn dot(&self, other: &Vec3) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
-    pub fn cross(&self, other: &Vec3) -> Vec3 {
-        Vec3 { x: self.y * other.z - self.z * other.y, y: self.z * other.x - self.x * other.z, z: self.x * other.y - self.y * other.x }
     }
 
     // Diffuse method 1.
@@ -63,35 +45,17 @@ impl Vec3 {
 
     // Diffuse method 2.
     pub fn random_unit_vector() -> Self {
-        Self::random_in_unit_sphere().unit_vector()
+        Self::random_in_unit_sphere().normalise()
     }
 
     // Diffuse method 3.
-    pub fn random_in_hemisphere(normal: &Vec3) -> Self {
+    pub fn random_in_hemisphere(normal: Vec3) -> Self {
         let in_unit_sphere = Self::random_in_unit_sphere();
         if in_unit_sphere.dot(normal) > 0.0 {   // In the same hemisphere as the normal.
             in_unit_sphere
         } else {
             -in_unit_sphere
         }   
-    }
-
-    // Return true if the vector is close to zero in all dimensions.
-    pub fn near_zero(&self) -> bool {
-        const S: f64 = 1e-8;
-        (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S)
-    }
-
-    pub fn reflect(incident: Vec3, unit_normal: Vec3) -> Self {
-        incident - 2.0 * incident.dot(&unit_normal) * unit_normal
-    }
-
-    // Use Snell's law to calculate the refracted ray.
-    pub fn refract(incident: Vec3, normal: Vec3, etai_over_etat: f64) -> Self {
-        let cos_theta = (-incident).dot(&normal).min(1.0);
-        let r_out_perpendicular = etai_over_etat * (incident + cos_theta * normal);
-        let r_out_parallel = -(1.0 - r_out_perpendicular.squared_length()).abs().sqrt() * normal;
-        r_out_perpendicular + r_out_parallel
     }
 
     pub fn random_in_unit_disk() -> Self {
@@ -106,6 +70,59 @@ impl Vec3 {
                 return p;
             }
         }
+    }
+}
+
+// Vector operations.
+impl Vec3 {
+
+    pub fn length(&self) -> f64 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    pub fn squared_length(&self) -> f64 {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
+    // Normalise vector to length 1.
+    // Use multiplication instead of division for speed.
+    pub fn normalise(&self) -> Vec3 {
+        let len = self.length();
+        if len == 0.0 {
+            return *self;
+        }
+        let inv_len = 1.0 / len;
+        Vec3 { x: self.x * inv_len, y: self.y * inv_len, z: self.z * inv_len }
+    }
+
+    // Project vector onto another vector.
+    pub fn dot(&self, other: Vec3) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    // Return vector perpendicular to two other vectors.
+    pub fn cross(&self, other: Vec3) -> Vec3 {
+        Vec3 { x: self.y * other.z - self.z * other.y, y: self.z * other.x - self.x * other.z, z: self.x * other.y - self.y * other.x }
+    }
+
+    // Return true if the vector is close to zero in all dimensions.
+    pub fn near_zero(&self) -> bool {
+        const S: f64 = 1e-8;
+        (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S)
+    }
+}
+
+impl Vec3 {
+    pub fn reflect(incident: Vec3, unit_normal: Vec3) -> Self {
+        incident - 2.0 * incident.dot(unit_normal) * unit_normal
+    }
+
+    // Use Snell's law to calculate the refracted ray.
+    pub fn refract(incident: Vec3, normal: Vec3, etai_over_etat: f64) -> Self {
+        let cos_theta = (-incident).dot(normal).min(1.0);
+        let r_out_perpendicular = etai_over_etat * (incident + cos_theta * normal);
+        let r_out_parallel = -(1.0 - r_out_perpendicular.squared_length()).abs().sqrt() * normal;
+        r_out_perpendicular + r_out_parallel
     }
 }
 
@@ -173,6 +190,20 @@ impl MulAssign<f64> for Vec3 {
     }
 }
 
+impl Div for Vec3 {
+    type Output = Vec3;
+
+    fn div(self, other: Vec3) -> Vec3 {
+        Vec3 { x: self.x / other.x, y: self.y / other.y, z: self.z / other.z }
+    }
+}
+
+impl DivAssign for Vec3 {
+    fn div_assign(&mut self, other: Vec3) {
+        *self = Vec3 { x: self.x / other.x, y: self.y / other.y, z: self.z / other.z }
+    }
+}
+
 impl Div<f64> for Vec3 {
     type Output = Vec3;
 
@@ -195,4 +226,140 @@ impl Neg for Vec3 {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn test_length() {
+        let v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert_eq!(v.length(), 3.7416573867739413);
+    }
+
+    #[test]
+    fn test_squared_length() {
+        let v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert_eq!(v.squared_length(), 14.0);
+    }
+
+    #[test]
+    fn test_normalise() {
+        let v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert_eq!(v.normalise(), Vec3 { x: 0.2672612419124244, y: 0.5345224838248488, z: 0.8017837257372732 });
+    }
+
+    #[test]
+    fn test_dot() {
+        let v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        assert_eq!(v1.dot(v2), 32.0);
+    } 
+
+    #[test]
+    fn test_cross() {
+        let v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        assert_eq!(v1.cross(v2), Vec3 { x: -3.0, y: 6.0, z: -3.0 });
+    }
+
+    #[test]
+    fn test_near_zero() {
+        let v = Vec3 { x: 0.5e-8, y: 0.3e-8, z: 0.0 };
+        assert!(v.near_zero());
+
+        let u = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert!(!u.near_zero());
+    }
+
+    #[test]
+    fn test_add() {
+        let v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        assert_eq!(v1 + v2, Vec3 { x: 5.0, y: 7.0, z: 9.0 });
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        v1 += v2;
+        assert_eq!(v1, Vec3 { x: 5.0, y: 7.0, z: 9.0 });
+    }
+
+    #[test]
+    fn test_sub() {
+        let v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        assert_eq!(v1 - v2, Vec3 { x: -3.0, y: -3.0, z: -3.0 });
+    }
+
+    #[test]
+    fn test_sub_assign() {
+        let mut v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        v1 -= v2;
+        assert_eq!(v1, Vec3 { x: -3.0, y: -3.0, z: -3.0 });
+    }
+
+    #[test]
+    fn test_mul() {
+        let v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        assert_eq!(v1 * v2, Vec3 { x: 4.0, y: 10.0, z: 18.0 });
+    }
+
+    #[test]
+    fn test_mul_assign() {
+        let mut v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        v1 *= v2;
+        assert_eq!(v1, Vec3 { x: 4.0, y: 10.0, z: 18.0 });
+    }
+
+    #[test]
+    fn test_mul_scalar() {
+        let v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert_eq!(v * 2.0, Vec3 { x: 2.0, y: 4.0, z: 6.0 });
+    }
+
+    #[test]
+    fn test_mul_assign_scalar() {
+        let mut v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        v *= 2.0;
+        assert_eq!(v, Vec3 { x: 2.0, y: 4.0, z: 6.0 });
+    }
+
+    #[test]
+    fn test_div() {
+        let v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        assert_eq!(v1 / v2, Vec3 { x: 0.25, y: 0.4, z: 0.5 });
+    }
+
+    #[test]
+    fn test_div_assign() {
+        let mut v1 = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        let v2 = Vec3 { x: 4.0, y: 5.0, z: 6.0 };
+        v1 /= v2;
+        assert_eq!(v1, Vec3 { x: 0.25, y: 0.4, z: 0.5 });
+    }
+
+    #[test]
+    fn test_div_scalar() {
+        let v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert_eq!(v / 2.0, Vec3 { x: 0.5, y: 1.0, z: 1.5 });
+    }
+
+    #[test]
+    fn test_div_assign_scalar() {
+        let mut v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        v /= 2.0;
+        assert_eq!(v, Vec3 { x: 0.5, y: 1.0, z: 1.5 });
+    }
+
+    #[test]
+    fn test_neg() {
+        let v = Vec3 { x: 1.0, y: 2.0, z: 3.0 };
+        assert_eq!(-v, Vec3 { x: -1.0, y: -2.0, z: -3.0 });
+    }
+}

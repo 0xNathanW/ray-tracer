@@ -25,9 +25,9 @@ impl Object for Sphere {
         // a = dot(B, B)
         let a = ray.direction.squared_length();
         // b = 2 * dot(B, A-C) .. half_b = dot(B, A-C)
-        let half_b = oc.dot(&ray.direction);
+        let half_b = oc.dot(ray.direction);
         // c = dot(A-C, A-C) - R^2
-        let c = oc.dot(&oc) - self.radius * self.radius;
+        let c = oc.dot(oc) - self.radius * self.radius;
         // Discriminant tells us how many roots there are.
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 { return false; }
@@ -46,7 +46,7 @@ impl Object for Sphere {
         hit_record.t = root;
         hit_record.incidence_point = ray.at(hit_record.t);
         let outward_normal = (hit_record.incidence_point - self.center) / self.radius;
-        hit_record.set_face_normal(ray, &outward_normal);
+        hit_record.set_face_normal(ray, outward_normal);
         hit_record.material = Some(Rc::clone(&self.material));
 
         true

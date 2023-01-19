@@ -4,10 +4,10 @@ use ray_tracer::vec3::{Colour, Point3, Vec3};
 use ray_tracer::colour::write_colour;
 use ray_tracer::ray::Ray;
 
-const ASPECT_RATIO: f64      = 3.0 / 2.0;
-const IMAGE_WIDTH: u32       = 1200;
+const ASPECT_RATIO: f64      = 16.0 / 9.0;
+const IMAGE_WIDTH: u32       = 500;
 const IMAGE_HEIGHT: u32      = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 500;
+const SAMPLES_PER_PIXEL: u32 = 100;
 const MAX_DEPTH: u32         = 50;
 
 fn main() {
@@ -67,7 +67,7 @@ fn ray_colour(ray: &Ray, obj: &dyn Object, depth: usize) -> Colour {
 
     } else {
         // Background colour.
-        let unit_direction = ray.direction.unit_vector();
+        let unit_direction = ray.direction.normalise();
         let t = 0.5 * (unit_direction.y + 1.0);
         (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
     }
