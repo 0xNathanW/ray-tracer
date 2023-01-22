@@ -30,5 +30,4 @@ mod tests {
         let result = p.transform_point(&m);
         assert_eq!(result, p);
     }
-
 }

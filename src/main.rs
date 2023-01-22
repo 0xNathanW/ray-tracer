@@ -1,5 +1,5 @@
 use ray_tracer::camera::Camera;
-use ray_tracer::object::{HitRecord, Object, ObjectList};
+use ray_tracer::object::{HitRecord, Object, Scene};
 use ray_tracer::vec3::Vec3;
 use ray_tracer::point3::Point3;
 use ray_tracer::colour::Colour;
@@ -14,7 +14,7 @@ const MAX_DEPTH: u32         = 50;
 
 fn main() {
 
-    let scene = ObjectList::randomised_scene();
+    let scene = Scene::randomised_scene();
 
     let camera = Camera::new(
         Point3::new(13.0, 2.0, 3.0),

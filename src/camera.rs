@@ -26,8 +26,7 @@ impl Camera {
             focus_dist:     f64,
         ) -> Self {
         
-        let theta = degrees_to_radians(vert_fov);
-        let h = (theta / 2.0).tan();
+        let h = (vert_fov.to_radians() / 2.0).tan();
         let viewport_height = 2.0 * h;
         let viewport_width = aspect_ratio * viewport_height;
 
@@ -60,8 +59,4 @@ impl Camera {
             self.lower_left_corner + a * self.horizontal + b * self.vertical - self.origin - offset
         )
     }
-}
-
-fn degrees_to_radians(degrees: f64) -> f64 {
-    degrees * std::f64::consts::PI / 180.0
 }
