@@ -1,24 +1,24 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::point3::Point3;
-use crate::object::{Object, HitRecord};
+use crate::object::{Object, Intersection};
 use crate::material::Material;
 use crate::ray::Ray;
 
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    material: Rc<dyn Material>,
+    material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn new(center: Point3, radius: f64, material: Arc<dyn Material>) -> Self {
         Self { center, radius, material }
     }
 }
 
 impl Object for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
 
         let oc = ray.origin - self.center;
         // Equation to solve: t^2 * dot(B, B) + 2t * dot(B, A-C) + dot(A-C, A-C) - R^2 = 0
@@ -30,7 +30,7 @@ impl Object for Sphere {
         let c = oc.dot(oc) - self.radius * self.radius;
         // Discriminant tells us how many roots there are.
         let discriminant = half_b * half_b - a * c;
-        if discriminant < 0.0 { return false; }
+        if discriminant < 0.0 { return None; }
 
         // Find nearest root that t_min < root < t_max
         let mut root = (-half_b - discriminant.sqrt()) / a;
@@ -39,16 +39,18 @@ impl Object for Sphere {
             root = (-half_b + discriminant.sqrt()) / a;
             if (root < t_min) || (root > t_max) {
                 // Both roots are outside the range.
-                return false;
+                return None;
             }
         }
 
-        hit_record.t = root;
-        hit_record.incidence_point = ray.at(hit_record.t);
-        let outward_normal = (hit_record.incidence_point - self.center) / self.radius;
-        hit_record.set_face_normal(ray, outward_normal);
-        hit_record.material = Some(Rc::clone(&self.material));
+        let mut hit = Intersection::new(
+            ray.at(root),
+            self.material.clone(),
+            root,
+        );
+        let outward_normal = (hit.incidence_point - self.center) / self.radius;
+        hit.set_face_normal(ray, outward_normal);
 
-        true
+        Some(hit)
     }
 }
