@@ -17,18 +17,18 @@ pub struct Camera {
 
 impl Camera {
     pub fn new(
-            look_from:      Point3,
-            look_at:        Point3,
-            view_up:        Vec3,
-            vert_fov:       f64, // Vertical field of view in degrees.
-            aspect_ratio:   f64,
-            aperture:       f64,
-            focus_dist:     f64,
-        ) -> Self {
+        look_from:      Point3,
+        look_at:        Point3,
+        view_up:        Vec3,
+        vert_fov:       f64, // Vertical field of view in degrees.
+        dimensions:     (u32, u32),
+        aperture:       f64,
+        focus_dist:     f64,
+    ) -> Self {
         
         let h = (vert_fov.to_radians() / 2.0).tan();
         let viewport_height = 2.0 * h;
-        let viewport_width = aspect_ratio * viewport_height;
+        let viewport_width = (dimensions.0 as f64 / dimensions.1 as f64) * viewport_height;
 
         let w = (look_from - look_at).normalise();
         let u = view_up.cross(w).normalise();
@@ -38,6 +38,7 @@ impl Camera {
         let horizontal = viewport_width * u * focus_dist;
         let vertical = viewport_height * v * focus_dist;
         let lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - w * focus_dist;
+        
         Self {
             origin,
             lower_left_corner,

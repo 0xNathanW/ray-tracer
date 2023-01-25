@@ -4,15 +4,15 @@ use crate::object::Object;
 
 pub type Colour = Vec3;
 
-const RED: Colour    = Colour { x: 1.0, y: 0.0, z: 0.0 };
-const GREEN: Colour  = Colour { x: 0.0, y: 1.0, z: 0.0 };
-const BLUE: Colour   = Colour { x: 0.0, y: 0.0, z: 1.0 };
-const WHITE: Colour  = Colour { x: 1.0, y: 1.0, z: 1.0 };
-const BLACK: Colour  = Colour { x: 0.0, y: 0.0, z: 0.0 };
-const PINK: Colour   = Colour { x: 1.0, y: 0.0, z: 1.0 };
-const YELLOW: Colour = Colour { x: 1.0, y: 1.0, z: 0.0 };
-const CYAN: Colour   = Colour { x: 0.0, y: 1.0, z: 1.0 };
-const ORANGE: Colour = Colour { x: 1.0, y: 0.5, z: 0.0 };
+pub const RED: Colour    = Colour { x: 1.0, y: 0.0, z: 0.0 };
+pub const GREEN: Colour  = Colour { x: 0.0, y: 1.0, z: 0.0 };
+pub const BLUE: Colour   = Colour { x: 0.0, y: 0.0, z: 1.0 };
+pub const WHITE: Colour  = Colour { x: 1.0, y: 1.0, z: 1.0 };
+pub const BLACK: Colour  = Colour { x: 0.0, y: 0.0, z: 0.0 };
+pub const PINK: Colour   = Colour { x: 1.0, y: 0.0, z: 1.0 };
+pub const YELLOW: Colour = Colour { x: 1.0, y: 1.0, z: 0.0 };
+pub const CYAN: Colour   = Colour { x: 0.0, y: 1.0, z: 1.0 };
+pub const ORANGE: Colour = Colour { x: 1.0, y: 0.5, z: 0.0 };
 
 impl Colour {
     pub fn gamma_correct(&mut self, samples: u32) {
@@ -23,12 +23,12 @@ impl Colour {
     }
 }
 
-impl Into<Vec<u8>> for Colour {
-    fn into(self) -> Vec<u8> {
+impl From<Colour> for Vec<u8> {
+    fn from(colour: Colour) -> Vec<u8> {
         vec![
-            (256.0 * self.x.clamp(0.0, 0.999)) as u8,
-            (256.0 * self.y.clamp(0.0, 0.999)) as u8,
-            (256.0 * self.z.clamp(0.0, 0.999)) as u8,
+            (256.0 * colour.x.clamp(0.0, 0.999)) as u8,
+            (256.0 * colour.y.clamp(0.0, 0.999)) as u8,
+            (256.0 * colour.z.clamp(0.0, 0.999)) as u8,
         ]
     }
 }
@@ -44,9 +44,9 @@ pub fn ray_colour(ray: &Ray, obj: &dyn Object, depth: usize) -> Colour {
         let mut attenuation = Colour::default();
     
         if hit_rec.material.scatter(ray, &hit_rec, &mut attenuation, &mut scattered) {
-            return attenuation * ray_colour(&scattered, obj, depth - 1);
+            attenuation * ray_colour(&scattered, obj, depth - 1)
         } else {
-            return Colour::default();
+            Colour::default()
         }
     
     } else {

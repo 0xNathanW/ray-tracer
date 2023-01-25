@@ -72,15 +72,15 @@ impl Vec3 {
     }
 }
 
-impl Into<Matrix<1, 3> > for Vec3 {
-    fn into(self) -> Matrix<1, 3> {
-        Matrix::new([[self.x, self.y, self.z]])
+impl From<Vec3> for Matrix<1, 3> {
+    fn from(v: Vec3) -> Self {
+        Matrix::new([[v.x, v.y, v.z]])
     }
 }
 
-impl Into<Matrix<3, 1> > for Vec3 {
-    fn into(self) -> Matrix<3, 1> {
-        Matrix::new([[self.x], [self.y], [self.z]])
+impl From<Vec3> for Matrix<3, 1> {
+    fn from(v: Vec3) -> Self {
+        Matrix::new([[v.x], [v.y], [v.z]])
     }
 }
 
@@ -127,11 +127,11 @@ impl Vec3 {
 // Don't worry about translation, vectors are only used for direction.
 impl Vec3 {
     pub fn transform_vec(&self, matrix: &Matrix<3, 3>) -> Vec3 {
-        let mut result = Vec3::default();
-        result.x = self.x * matrix[0][0] + self.y * matrix[1][0] + self.z * matrix[2][0];
-        result.y = self.x * matrix[0][1] + self.y * matrix[1][1] + self.z * matrix[2][1];
-        result.z = self.x * matrix[0][2] + self.y * matrix[1][2] + self.z * matrix[2][2];
-        result
+        Vec3::new(
+        self.x * matrix[0][0] + self.y * matrix[1][0] + self.z * matrix[2][0],
+        self.x * matrix[0][1] + self.y * matrix[1][1] + self.z * matrix[2][1],
+        self.x * matrix[0][2] + self.y * matrix[1][2] + self.z * matrix[2][2],
+        )
     }
 }
 
