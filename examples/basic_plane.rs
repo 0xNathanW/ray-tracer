@@ -6,13 +6,11 @@ use ray_tracer::{
     Vec3,
     Scene,
     Object,
-    Disk,
-    Plane,
-    Sphere,
-    Lambertian,
     render,
-    write_to_file, Dielectric,
+    write_to_file,
 };
+use ray_tracer::object::{Sphere, Plane, Disk};
+use ray_tracer::material::{Lambertian, Dielectric};
 
 fn main() {
     let dimensions = (1500, 862);

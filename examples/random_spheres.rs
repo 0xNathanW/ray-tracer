@@ -5,16 +5,14 @@ use ray_tracer::{
     Point3,
     Vec3,
     Scene,
-    Sphere,
     Object,
     Material,
-    Lambertian,
-    Metal,
-    Dielectric,
     OutputFormat,
     render,
     write_to_file,
 };
+use ray_tracer::object::Sphere;
+use ray_tracer::material::{Lambertian, Metal, Dielectric};
 
 fn main() {
     let dimensions = (1500, 862);
@@ -30,12 +28,13 @@ fn main() {
         10.0,
     );
 
-    let image = render(scene, camera, dimensions, 500, 100);
+    let image = render(scene, camera, dimensions, 300, 100);
 
     write_to_file("random_spheres", image, OutputFormat::PNG, dimensions).unwrap();
 }
 
 fn randomised_scene() -> Scene {
+    let mut rng = rand::thread_rng();
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
     let ground_material = Arc::new(Lambertian::new(ray_tracer::colour::GREEN));
     objects.push(Box::new(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material)));
@@ -45,15 +44,15 @@ fn randomised_scene() -> Scene {
             let choose_material = rand::random::<f64>();
             let center = Point3::new(a as f64 + 0.9 * rand::random::<f64>(), 0.2, b as f64 + 0.9 * rand::random::<f64>());
 
-            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+            if (center - Point3::new(4.0, 0.2, 0.0)).magnitude() > 0.9 {
 
                 let sphere_material: Arc<dyn Material> = if choose_material < 0.8 {
                     // Diffuse
-                    let albedo = Colour::random() * Colour::random();
+                    let albedo = Colour::new_random(&mut rng) * Colour::new_random(&mut rng);
                     Arc::new(Lambertian::new(albedo))
                 } else if choose_material < 0.95 {
                     // Metal
-                    let albedo = Colour::random_range(0.5, 1.0);
+                    let albedo = Colour::new_random_range(0.5, 1.0, &mut rng);
                     let fuzz = rand::random::<f64>() * 0.5;
                     Arc::new(Metal::new(albedo, fuzz))
                 } else {
@@ -70,10 +69,10 @@ fn randomised_scene() -> Scene {
     let material1 = Arc::new(Dielectric::new(1.5));
     objects.push(Box::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, material1)));
 
-    let material2 = Arc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1)));
+    let material2 = Arc::new(Lambertian::new(Colour::new(0.4, 0.2, 0.1)));
     objects.push(Box::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, material2)));
 
-    let material3 = Arc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0));
+    let material3 = Arc::new(Metal::new(Colour::new(0.7, 0.6, 0.5), 0.0));
     objects.push(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, material3)));
 
     Scene::new(objects)

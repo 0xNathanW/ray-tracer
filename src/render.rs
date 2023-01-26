@@ -1,10 +1,13 @@
 use std::sync::Arc;
 use std::ops::Deref;
+use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 use indicatif::{ProgressBar, ProgressStyle};
-use crate::camera::Camera;
-use crate::scene::Scene;
-use crate::colour::{Colour, ray_colour};
+use crate::Camera;
+use crate::Scene;
+use crate::ray::Ray;
+use crate::colour::Colour;
+use crate::Object;
 
 pub type Image = Vec<Vec<u8>>;
 
@@ -33,6 +36,7 @@ pub fn render(
     .rev()
     .map(|j| {
 
+        let mut rng = rand::thread_rng();
         let scene = Arc::clone(&scene);
         let mut row = vec![0; 3 * dimensions.0 as usize];
         for i in 0..dimensions.0 {
@@ -42,8 +46,8 @@ pub fn render(
                 // Randomise the sample point within the pixel.
                 let u = (i as f64 + rand::random::<f64>()) / (dimensions.0 - 1) as f64;
                 let v = (j as f64 + rand::random::<f64>()) / (dimensions.1 - 1) as f64;
-                let ray = camera.get_ray(u, v);
-                pixel_colour += ray_colour(&ray, scene.deref(), max_depth as usize);
+                let ray = camera.get_ray(u, v, &mut rng);
+                pixel_colour += ray_colour(&ray, scene.deref(), max_depth as usize, &mut rng);
             }
             
             pixel_colour.gamma_correct(samples_per_pixel);
@@ -60,4 +64,28 @@ pub fn render(
     progress_bar.finish_with_message("Done");
     println!("Finished rendering in {} seconds.", time_taken.as_secs_f64());
     pixels
+}
+
+pub fn ray_colour(ray: &Ray, obj: &dyn Object, depth: usize, rng: &mut ThreadRng) -> Colour {
+        
+    if depth == 0 {
+        return Colour::default();
+    }
+
+    if let Some(hit_rec) = obj.hit(ray, 0.001, f64::INFINITY) {
+        let mut scattered = Ray::default();
+        let mut attenuation = Colour::default();
+    
+        if hit_rec.material.scatter(ray, &hit_rec, &mut attenuation, &mut scattered, rng) {
+            attenuation * ray_colour(&scattered, obj, depth - 1, rng)
+        } else {
+            Colour::default()
+        }
+    
+    } else {
+        // Background colour.
+        let unit_direction = ray.direction.normalize();
+        let t = 0.5 * (unit_direction.y + 1.0);
+        (1.0 - t) * Colour::new(1.0, 1.0, 1.0) + t * Colour::new(0.5, 0.7, 1.0)
+    }
 }

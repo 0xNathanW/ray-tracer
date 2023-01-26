@@ -1,0 +1,31 @@
+
+camera: 
+  look_from: [0, 0, 10]
+  look_at: [20, 20, 0]
+  vup: [0, 0, 1]
+  vfov: 30
+  aperture: 0
+  focus_dist: 10
+
+objects:
+  
+  - !Plane
+      point: [20, 20, 0]
+      normal: [0, 0, 1]
+      material: !Lambertian
+        colour: [0, 0, 1]
+
+  - !Disk
+      center: [20, 20, 4]
+      normal: [0, 0, 1]
+      radius: 5
+      material: !Dielectric
+        refraction_index: 1.5
+  
+  - !Sphere
+      center: [20, 20, 2]
+      radius: 2
+      material: !Lambertian
+        colour: [1, 0, 0]
+    
+

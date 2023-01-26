@@ -1,8 +1,7 @@
 use std::sync::Arc;
+use crate::{Vec3, Point3};
 use crate::material::Material;
-use crate::point3::Point3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 mod sphere;
 mod plane;
@@ -41,7 +40,7 @@ impl Intersection {
     }
 
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
-        self.front_face = ray.direction.dot(outward_normal) < 0.0;
+        self.front_face = ray.direction.dot(&outward_normal) < 0.0;
         self.normal = if self.front_face { outward_normal } else { -outward_normal };
     }
 }

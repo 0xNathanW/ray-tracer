@@ -1,7 +1,8 @@
+use rand::prelude::*;
+use crate::math::{rand_unit_vec, near_zero};
 use crate::ray::Ray;
 use crate::colour::Colour;
 use crate::object::Intersection;
-use crate::vec3::Vec3;
 use super::Material;
 
 pub struct Lambertian {
@@ -19,11 +20,12 @@ impl Material for Lambertian {
             hit_record: &Intersection,
             attenuation: &mut Colour,
             scattered: &mut Ray,
+            rng: &mut ThreadRng,
     ) -> bool {
         
-        let mut scatter_direction = hit_record.normal + Vec3::random_unit_vector();
+        let mut scatter_direction = hit_record.normal + rand_unit_vec(rng).as_ref(); 
         // Don't want a zero scatter direction.
-        if scatter_direction.near_zero() {
+        if near_zero(&scatter_direction) {
             scatter_direction = hit_record.normal;
         }
 

@@ -1,7 +1,6 @@
 use std::sync::Arc;
+use crate::{Vec3, Point3};
 use crate::material::Material;
-use crate::point3::Point3;
-use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::object::Object;
 use crate::object::Intersection;
@@ -15,23 +14,19 @@ pub struct Plane {
 
 impl Plane {
     pub fn new(point: Point3, normal: Vec3, material: Arc<dyn Material>) -> Self {
-        Self {
-            point,
-            normal,
-            material,
-        }
+        Self { point, normal, material }
     }
 }
 
 impl Object for Plane {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
-        let denominator = self.normal.dot(ray.direction);
+        let denominator = self.normal.dot(&ray.direction);
         // Infinite solutions (div by 0).
         if denominator.abs() < 1e-6 {
             return None;
         }
         
-        let t = (self.point - ray.origin).dot(self.normal) / denominator;
+        let t = (self.point - ray.origin).dot(&self.normal) / denominator;
         if t < t_min || t > t_max {
             None
         } else {
@@ -65,19 +60,19 @@ impl Object for Disk {
 
     fn hit(&self, ray: &crate::ray::Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         
-        let denominator = self.normal.dot(ray.direction);
+        let denominator = self.normal.dot(&ray.direction);
         // Infinite solutions (div by 0).
         if denominator.abs() < 1e-6 {
             return None;
         }
         
-        let t = (self.center - ray.origin).dot(self.normal) / denominator;
+        let t = (self.center - ray.origin).dot(&self.normal) / denominator;
         if t < t_min || t > t_max {
             return None;
         }
 
         let point = ray.at(t);
-        let distance = (point - self.center).length();
+        let distance = (point - self.center).magnitude();
         if distance > self.radius {
             return None;
         }

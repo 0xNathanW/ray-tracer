@@ -1,6 +1,5 @@
 use std::sync::Arc;
-
-use crate::point3::Point3;
+use crate::Point3;
 use crate::object::{Object, Intersection};
 use crate::material::Material;
 use crate::ray::Ray;
@@ -23,11 +22,11 @@ impl Object for Sphere {
         let oc = ray.origin - self.center;
         // Equation to solve: t^2 * dot(B, B) + 2t * dot(B, A-C) + dot(A-C, A-C) - R^2 = 0
         // a = dot(B, B)
-        let a = ray.direction.squared_length();
+        let a = ray.direction.magnitude_squared();
         // b = 2 * dot(B, A-C) .. half_b = dot(B, A-C)
-        let half_b = oc.dot(ray.direction);
+        let half_b = oc.dot(&ray.direction);
         // c = dot(A-C, A-C) - R^2
-        let c = oc.dot(oc) - self.radius * self.radius;
+        let c = oc.dot(&oc) - self.radius * self.radius;
         // Discriminant tells us how many roots there are.
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 { return None; }

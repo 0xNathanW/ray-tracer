@@ -1,6 +1,7 @@
-use crate::vec3::Vec3;
-use crate::point3::Point3;
+use rand::prelude::*;
+use crate::{Point3, Vec3};
 use crate::ray::Ray;
+use crate::math::rand_in_unit_disk;
 
 #[derive(Default)]
 pub struct Camera {
@@ -30,9 +31,9 @@ impl Camera {
         let viewport_height = 2.0 * h;
         let viewport_width = (dimensions.0 as f64 / dimensions.1 as f64) * viewport_height;
 
-        let w = (look_from - look_at).normalise();
-        let u = view_up.cross(w).normalise();
-        let v = w.cross(u);
+        let w = (look_from - look_at).normalize();
+        let u = view_up.cross(&w).normalize();
+        let v = w.cross(&u);
         
         let origin = look_from;
         let horizontal = viewport_width * u * focus_dist;
@@ -51,8 +52,8 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(&self, a: f64, b: f64) -> Ray {
-        let rd = self.lens_radius * Vec3::random_in_unit_disk();
+    pub fn get_ray(&self, a: f64, b: f64, rng: &mut ThreadRng) -> Ray {
+        let rd = self.lens_radius * rand_in_unit_disk(rng);
         let offset = self.u * rd.x + self.v * rd.y;
         
         Ray::new(
