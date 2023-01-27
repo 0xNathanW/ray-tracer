@@ -5,10 +5,11 @@ use crate::ray::Ray;
 
 mod sphere;
 mod plane;
-mod cuboid;
+mod bbox;
 
 pub use sphere::Sphere;
 pub use plane::{Plane, Disk};
+pub use bbox::{AxisAlignedBoundingBox, BoundingBox};
 
 pub struct Intersection {
     // The point at which the ray hit the object.

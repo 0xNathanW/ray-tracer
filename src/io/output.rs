@@ -29,8 +29,8 @@ pub fn write_to_file(
             image::save_buffer_with_format(
                 &path,
                 flat_img.as_slice(),
-                dimensions.0 as u32,
-                dimensions.1 as u32,
+                dimensions.0,
+                dimensions.1,
                 image::ColorType::Rgb8,
                 image::ImageFormat::Png,
             ).context("Could not save image buffer to PNG file format.")?;

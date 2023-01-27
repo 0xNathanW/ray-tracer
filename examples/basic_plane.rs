@@ -17,7 +17,7 @@ fn main() {
 
     let scene = plane_scene();
     let camera = Camera::new(
-        Point3::new(0.0, 0.0, 10.0),
+        Point3::new(0.0, 0.0, 4.0),
         Point3::new(20.0, 20.0, 0.0),
         Vec3::new(0.0, 0.0, 1.0),
         30.0,
@@ -33,17 +33,16 @@ fn main() {
 fn plane_scene() -> Scene {
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
     
-    let plane_material = Arc::new(Lambertian::new(colour::BLUE));
+    let plane_material = Arc::new(Lambertian::new(colour::GREEN));
     objects.push(Box::new(Plane::new(
         Point3::new(20.0, 20.0, 0.0),
         Vec3::new(0.0, 0.0, 1.0),
-        // 5.0,
         plane_material,
     )));
 
     let disk_material = Arc::new(Dielectric::new(1.5));
     objects.push(Box::new(Disk::new(
-        Point3::new(20.0, 20.0, 4.0),
+        Point3::new(20.0, 20.0, 2.0),
         Vec3::new(0.0, 0.0, 1.0),
         5.0,
         disk_material,

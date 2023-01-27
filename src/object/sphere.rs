@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::Point3;
+use crate::{Point3};
 use crate::object::{Object, Intersection};
 use crate::material::Material;
 use crate::ray::Ray;
@@ -49,7 +49,6 @@ impl Object for Sphere {
         );
         let outward_normal = (hit.incidence_point - self.center) / self.radius;
         hit.set_face_normal(ray, outward_normal);
-
         Some(hit)
     }
 }

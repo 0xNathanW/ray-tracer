@@ -57,9 +57,8 @@ impl Disk {
 }
 
 impl Object for Disk {
-
     fn hit(&self, ray: &crate::ray::Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
-        
+
         let denominator = self.normal.dot(&ray.direction);
         // Infinite solutions (div by 0).
         if denominator.abs() < 1e-6 {
@@ -81,5 +80,4 @@ impl Object for Disk {
         intersection.set_face_normal(ray, self.normal);
         Some(intersection)
     }
-
 }
