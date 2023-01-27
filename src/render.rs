@@ -12,14 +12,12 @@ use crate::Object;
 pub type Image = Vec<Vec<u8>>;
 
 pub fn render(
-    scene: Scene,
+    scene: Arc<Scene>,
     camera: Camera,
     dimensions: (u32, u32),
     samples_per_pixel: u32,
     max_depth: u32,
 ) -> Image {
-
-    let scene = Arc::new(scene);
 
     println!();
     let progress_bar = ProgressBar::new(dimensions.1 as u64)

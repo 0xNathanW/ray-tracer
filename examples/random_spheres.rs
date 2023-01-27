@@ -28,7 +28,7 @@ fn main() {
         10.0,
     );
 
-    let image = render(scene, camera, dimensions, 300, 100);
+    let image = render(Arc::new(scene), camera, dimensions, 300, 100);
 
     write_to_file("random_spheres", image, OutputFormat::PNG, dimensions).unwrap();
 }

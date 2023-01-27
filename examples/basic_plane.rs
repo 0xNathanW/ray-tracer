@@ -26,7 +26,7 @@ fn main() {
         10.0,
     );
 
-    let image = render(scene, camera, dimensions, 500, 500);
+    let image = render(Arc::new(scene), camera, dimensions, 500, 500);
     write_to_file("plane", image, ray_tracer::OutputFormat::PNG, dimensions).unwrap();
 }
 

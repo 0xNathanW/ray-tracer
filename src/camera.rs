@@ -3,7 +3,7 @@ use crate::{Point3, Vec3};
 use crate::ray::Ray;
 use crate::math::rand_in_unit_disk;
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Camera {
     origin:             Point3,
     lower_left_corner:  Point3,

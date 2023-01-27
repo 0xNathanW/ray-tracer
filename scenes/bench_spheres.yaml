@@ -1,0 +1,66 @@
+camera: 
+  look_from: [0, 0, 8]
+  look_at: [30, 30, 0]
+  vup: [0, 0, 1]
+  vfov: 30
+  aperture: 0
+  focus_dist: 10
+
+objects:
+
+  - !Plane
+    point: [30, 30, 0]
+    normal: [0, 0, 1]
+    material: !Metal
+      colour: [0.8, 0.5, 0.8]
+      fuzz: 0.15
+
+  - !Sphere
+    center: [30, 30, 5]
+    radius: 5
+    material: !Dielectric
+      refraction_index: 1.52
+
+  - !Sphere
+    center: [30, 30, 5]
+    radius: 3
+    material: !Dielectric
+      refraction_index: 1.52
+
+  - !Sphere
+    center: [40, 30, 5]
+    radius: 5
+    material: !Lambertian
+      colour: [0.5, 0, 0]
+
+  - !Sphere
+    center: [20, 28, 5]
+    radius: 5
+    material: !Metal
+      colour: [0.7, 0.6, 0.5]
+      fuzz: 0
+
+  - !Sphere
+    center: [35, 20, 2]
+    radius: 2
+    material: !Metal
+      colour: [0.2, 0.8, 0.3]
+      fuzz: 0
+
+  - !Sphere
+    center: [25, 20, 2]
+    radius: 2
+    material: !Dielectric
+      refraction_index: 1.52
+
+  - !Sphere
+    center: [14, 30, 2]
+    radius: 2
+    material: !Lambertian
+      colour: [0, 0.5, 0]
+
+  - !Sphere
+    center: [25, 12, 1]
+    radius: 1
+    material: !Lambertian
+      colour: [0, 0, 0.5]

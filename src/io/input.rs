@@ -65,7 +65,7 @@ pub enum MaterialInputs {
     },
 }
 
-pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(Scene, Camera)> {
+pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(Arc<Scene>, Camera)> {
     
     let content = read(path).context("Failed to read scene file")?;
     let a: Inputs = serde_yaml::from_slice(&content).context("Failed to parse scene file")?;
@@ -102,7 +102,7 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(S
         }
     });
 
-    Ok((Scene::new(objects), camera))
+    Ok((Arc::new(Scene::new(objects)), camera))
 }
 
 
