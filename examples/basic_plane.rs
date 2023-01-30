@@ -10,15 +10,15 @@ use ray_tracer::{
     write_to_file,
 };
 use ray_tracer::object::{Sphere, Plane, Disk};
-use ray_tracer::material::{Lambertian, Dielectric};
+use ray_tracer::material::Lambertian;
 
 fn main() {
     let dimensions = (1500, 862);
 
     let scene = plane_scene();
     let camera = Camera::new(
-        Point3::new(0.0, 0.0, 4.0),
-        Point3::new(20.0, 20.0, 0.0),
+        Point3::new(0.0, 0.0, 8.0),
+        Point3::new(30.0, 30.0, 0.0),
         Vec3::new(0.0, 0.0, 1.0),
         30.0,
         dimensions,
@@ -33,27 +33,18 @@ fn main() {
 fn plane_scene() -> Scene {
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
     
-    let plane_material = Arc::new(Lambertian::new(colour::GREEN));
-    objects.push(Box::new(Plane::new(
-        Point3::new(20.0, 20.0, 0.0),
-        Vec3::new(0.0, 0.0, 1.0),
-        plane_material,
-    )));
+    let plane = Box::new(Plane::new(Arc::new(Lambertian::new(colour::GREEN))));
+    objects.push(plane);
 
-    let disk_material = Arc::new(Dielectric::new(1.5));
-    objects.push(Box::new(Disk::new(
-        Point3::new(20.0, 20.0, 2.0),
-        Vec3::new(0.0, 0.0, 1.0),
-        5.0,
-        disk_material,
-    )));
+    let mut disk = Box::new(Disk::new(Arc::new(Lambertian::new(colour::RED))));
+    disk.translate(30.0, 30.0, 4.0);
+    disk.scale(5.0, 5.0, 1.0);
+    objects.push(disk);
 
-    let sphere_material = Arc::new(Lambertian::new(colour::RED));
-    objects.push(Box::new(Sphere::new(
-        Point3::new(20.0, 20.0, 2.0),
-        2.0,
-        sphere_material,
-    )));
+    let mut sphere = Box::new(Sphere::new(Arc::new(Lambertian::new(colour::BLUE))));
+    sphere.translate(30.0, 30.0, 2.0);
+    sphere.scale_uniform(2.0);
+    objects.push(sphere);
 
     Scene::new(objects)
 }

@@ -15,7 +15,7 @@ use ray_tracer::object::Sphere;
 use ray_tracer::material::{Lambertian, Metal, Dielectric};
 
 fn main() {
-    let dimensions = (1500, 862);
+    let dimensions = ray_tracer::default_dims();
 
     let scene = randomised_scene();
     let camera = Camera::new(
@@ -27,7 +27,6 @@ fn main() {
         0.01,
         10.0,
     );
-
     let image = render(Arc::new(scene), camera, dimensions, 300, 100);
 
     write_to_file("random_spheres", image, OutputFormat::PNG, dimensions).unwrap();
@@ -36,8 +35,10 @@ fn main() {
 fn randomised_scene() -> Scene {
     let mut rng = rand::thread_rng();
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
-    let ground_material = Arc::new(Lambertian::new(ray_tracer::colour::GREEN));
-    objects.push(Box::new(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material)));
+    let mut sphere = Box::new(Sphere::new(Arc::new(Lambertian::new(ray_tracer::colour::GREEN))));
+    sphere.translate(0.0, -1000.0, 0.0);
+    sphere.scale_uniform(1000.0);
+    objects.push(sphere);
 
     for a in -11..11 {
         for b in -11..11 {
@@ -60,20 +61,24 @@ fn randomised_scene() -> Scene {
                     Arc::new(Dielectric::new(1.5))
                 };
 
-                objects.push(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                let mut sphere = Box::new(Sphere::new(sphere_material));
+                sphere.translate(center.x, center.y, center.z);
+                objects.push(sphere);
             }
-                
         }
     }
 
-    let material1 = Arc::new(Dielectric::new(1.5));
-    objects.push(Box::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, material1)));
+    let mut sphere1 = Box::new(Sphere::new(Arc::new(Dielectric::new(1.5))));
+    sphere1.translate(0.0, 1.0, 0.0);
+    objects.push(sphere1);
 
-    let material2 = Arc::new(Lambertian::new(Colour::new(0.4, 0.2, 0.1)));
-    objects.push(Box::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, material2)));
+    let mut sphere2 = Box::new(Sphere::new(Arc::new(Lambertian::new(Colour::new(0.4, 0.2, 0.1)))));
+    sphere2.translate(-4.0, 1.0, 0.0);
+    objects.push(sphere2);
 
-    let material3 = Arc::new(Metal::new(Colour::new(0.7, 0.6, 0.5), 0.0));
-    objects.push(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, material3)));
+    let mut sphere3 = Box::new(Sphere::new(Arc::new(Metal::new(Colour::new(0.7, 0.6, 0.5), 0.0))));
+    sphere3.translate(4.0, 1.0, 0.0);
+    objects.push(sphere3);
 
     Scene::new(objects)
 }

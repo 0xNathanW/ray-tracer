@@ -1,32 +1,34 @@
 use std::sync::Arc;
-use crate::{Point3};
+use crate::{Point3, Transform};
 use crate::object::{Object, Intersection};
 use crate::material::Material;
 use crate::ray::Ray;
 
 pub struct Sphere {
-    center: Point3,
-    radius: f64,
+    transform: Transform,
     material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: Arc<dyn Material>) -> Self {
-        Self { center, radius, material }
+    pub fn new(material: Arc<dyn Material>) -> Self {
+        Self { 
+            transform: Transform::identity(), 
+            material 
+        }
     }
 }
 
 impl Object for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit_world(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
 
-        let oc = ray.origin - self.center;
+        let oc = ray.origin - Point3::origin();
         // Equation to solve: t^2 * dot(B, B) + 2t * dot(B, A-C) + dot(A-C, A-C) - R^2 = 0
         // a = dot(B, B)
         let a = ray.direction.magnitude_squared();
         // b = 2 * dot(B, A-C) .. half_b = dot(B, A-C)
         let half_b = oc.dot(&ray.direction);
         // c = dot(A-C, A-C) - R^2
-        let c = oc.dot(&oc) - self.radius * self.radius;
+        let c = oc.dot(&oc) - 1.0;
         // Discriminant tells us how many roots there are.
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 { return None; }
@@ -47,8 +49,16 @@ impl Object for Sphere {
             self.material.clone(),
             root,
         );
-        let outward_normal = (hit.incidence_point - self.center) / self.radius;
+        let outward_normal = hit.incidence_point - Point3::origin();
         hit.set_face_normal(ray, outward_normal);
         Some(hit)
+    }
+
+    fn set_transform(&mut self, transform: Transform) {
+        self.transform = transform;
+    }
+
+    fn transform(&self) -> &Transform {
+        &self.transform
     }
 }

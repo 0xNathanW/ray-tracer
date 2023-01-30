@@ -1,21 +1,24 @@
+use crate::Transform;
 use crate::object::{Object, Intersection};
 use crate::ray::Ray;
 
 #[derive(Default)]
 pub struct Scene {
+    pub transform: Transform,
     pub objects: Vec<Box<dyn Object>>
 }
 
 impl Scene {
     pub fn new(objects: Vec<Box<dyn Object>>) -> Self {
-        Self { 
+        Self {
+            transform: Transform::identity(),
             objects
         }
     }
 }
 
 impl Object for Scene {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit_world(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         let mut hit = None;
         let mut closest_so_far = t_max;
 
@@ -27,5 +30,13 @@ impl Object for Scene {
             }
         }
         hit
+    }
+
+    fn transform(&self) -> &Transform {
+        &self.transform
+    }
+
+    fn set_transform(&mut self, transform: Transform) {
+        self.transform = transform;
     }
 }
