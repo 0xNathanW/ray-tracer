@@ -5,6 +5,7 @@ use crate::ray::Ray;
 #[derive(Default)]
 pub struct Scene {
     pub transform: Transform,
+    pub inverse:   Transform,
     pub objects: Vec<Box<dyn Object>>
 }
 
@@ -12,6 +13,7 @@ impl Scene {
     pub fn new(objects: Vec<Box<dyn Object>>) -> Self {
         Self {
             transform: Transform::identity(),
+            inverse:   Transform::identity(),
             objects
         }
     }
@@ -32,11 +34,19 @@ impl Object for Scene {
         hit
     }
 
+    fn set_transform(&mut self, transform: Transform) {
+        self.transform = transform;
+    }
+
+    fn set_inverse(&mut self, inverse: Transform) {
+        self.inverse = inverse;
+    }
+
     fn transform(&self) -> &Transform {
         &self.transform
     }
 
-    fn set_transform(&mut self, transform: Transform) {
-        self.transform = transform;
+    fn inverse(&self) -> &Transform {
+        &self.inverse
     }
 }

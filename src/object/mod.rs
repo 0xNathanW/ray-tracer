@@ -49,16 +49,16 @@ pub trait Object: Send + Sync {
 
     fn transform(&self) -> &Transform;
 
+    fn inverse(&self) -> &Transform;
+
     fn set_transform(&mut self, transform: Transform);
 
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
-        let inverse_transform = self.get_inverse_transform()?;
-        let ray = ray.transform(&inverse_transform);
-        self.hit_world(&ray, t_min, t_max)
-    }
+    // Inversion rule: (A * B)^-1 = B^-1 * A^-1
+    fn set_inverse(&mut self, inverse: Transform);
 
-    fn get_inverse_transform(&self) -> Option<Transform> {
-        self.transform().try_inverse()
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+        let inv_ray = ray.transform(self.inverse()); // Convert ray to object space.
+        self.hit_world(&inv_ray, t_min, t_max)
     }
 
     fn rotate(&mut self, axis: Axis, angle: f64) {
@@ -68,15 +68,24 @@ pub trait Object: Send + Sync {
             Axis::Z => Rotation::from_axis_angle(&Vec3::z_axis(), angle),
         };
         self.set_transform(self.transform() * rotation);
+        self.set_inverse(rotation.inverse() * self.inverse());
     }
 
     fn translate(&mut self, x: f64, y: f64, z: f64) {
-        self.set_transform(self.transform() * Translation::new(x, y, z));
+        let translation = Translation::new(x, y, z);
+        self.set_transform(self.transform() * translation);
+        self.set_inverse(translation.inverse() * self.inverse());
     }
 
     fn scale(&mut self, x: f64, y: f64, z: f64) {
-        let t = self.transform().matrix() * Scale::new(x, y, z).to_homogeneous();
-        self.set_transform(Transform::from_matrix_unchecked(t));
+        let scale = Scale::new(x, y, z).to_homogeneous();
+        let inv = scale.try_inverse().expect("Scale matrix is not invertible.");
+
+        let new_transform = self.transform().matrix() * scale;
+        self.set_transform(Transform::from_matrix_unchecked(new_transform));
+        
+        let new_inverse = inv * self.inverse().matrix();
+        self.set_inverse(Transform::from_matrix_unchecked(new_inverse));
     }
 
     fn scale_uniform(&mut self, scale: f64) {

@@ -6,6 +6,7 @@ use crate::ray::Ray;
 
 pub struct Sphere {
     transform: Transform,
+    inverse:   Transform,
     material: Arc<dyn Material>,
 }
 
@@ -13,6 +14,7 @@ impl Sphere {
     pub fn new(material: Arc<dyn Material>) -> Self {
         Self { 
             transform: Transform::identity(), 
+            inverse:   Transform::identity(),            
             material 
         }
     }
@@ -58,7 +60,15 @@ impl Object for Sphere {
         self.transform = transform;
     }
 
+    fn set_inverse(&mut self, inverse: Transform) {
+        self.inverse = inverse;
+    }
+
     fn transform(&self) -> &Transform {
         &self.transform
+    }
+
+    fn inverse(&self) -> &Transform {
+        &self.inverse
     }
 }

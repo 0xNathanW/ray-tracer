@@ -9,6 +9,7 @@ use crate::object::Intersection;
 // We start by defining the point as the origin and the normal as the z-axis, then we can transform this to our liking.
 pub struct Plane {
     transform: Transform,
+    inverse:   Transform,
     material: Arc<dyn Material>,
 }
 
@@ -17,6 +18,7 @@ impl Plane {
     pub fn new(material: Arc<dyn Material>) -> Self {
         Self {
             transform: Transform::default(),
+            inverse:   Transform::default(),
             material,
         }
     }
@@ -43,13 +45,22 @@ impl Object for Plane {
         self.transform = transform;
     }
 
+    fn set_inverse(&mut self, inverse: Transform) {
+        self.inverse = inverse;
+    }
+
     fn transform(&self) -> &Transform {
         &self.transform
+    }
+
+    fn inverse(&self) -> &Transform {
+        &self.inverse
     }
 }
 
 pub struct Disk{
     transform: Transform,
+    inverse:   Transform,
     material: Arc<dyn Material>,
 }
 
@@ -58,6 +69,7 @@ impl Disk {
     pub fn new(material: Arc<dyn Material>) -> Self {
         Self { 
             transform: Transform::identity(),
+            inverse:   Transform::identity(),
             material ,
         }
     }
@@ -91,7 +103,15 @@ impl Object for Disk {
         self.transform = transform;
     }
 
+    fn set_inverse(&mut self, inverse: Transform) {
+        self.inverse = inverse;
+    }
+
     fn transform(&self) -> &Transform {
         &self.transform
+    }
+
+    fn inverse(&self) -> &Transform {
+        &self.inverse
     }
 }
