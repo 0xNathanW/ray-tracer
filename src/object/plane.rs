@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::{Vec3, Point3, Transform};
+use crate::{Vec3, Point3, Matrix4};
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::object::Object;
@@ -8,8 +8,8 @@ use crate::object::Intersection;
 // A plane can be defined as a point representing how far the plane is from the world's origin and a normal (defining the orientation of the plane).
 // We start by defining the point as the origin and the normal as the z-axis, then we can transform this to our liking.
 pub struct Plane {
-    transform: Transform,
-    inverse:   Transform,
+    transform: Matrix4,
+    inverse:   Matrix4,
     material: Arc<dyn Material>,
 }
 
@@ -17,15 +17,15 @@ pub struct Plane {
 impl Plane {
     pub fn new(material: Arc<dyn Material>) -> Self {
         Self {
-            transform: Transform::default(),
-            inverse:   Transform::default(),
+            transform: Matrix4::identity(),
+            inverse:   Matrix4::identity(),
             material,
         }
     }
 }
 
 impl Object for Plane {
-    fn hit_world(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         // Infinite solutions (div by 0).
         if ray.direction.z.abs() < 1e-6 {
             return None;
@@ -35,32 +35,41 @@ impl Object for Plane {
         if t < t_min || t > t_max {
             None
         } else {
-            let mut intersection = Intersection::new(ray.at(t), self.material.clone(), t);
-            intersection.set_face_normal(ray, Vec3::new(0.0, 0.0, 1.0));
-            Some(intersection)
+            let point = ray.at(t);
+            Some(Intersection::new(
+                self.inverse.transform_point(&point),
+                self.material.clone(),
+                t,
+                ray,
+                self.normal_at(&self.inverse.transform_point(&point)),
+            ))
         }
     }
+    
+    fn normal_obj(&self, _point: &Point3) -> Vec3 {
+        Vec3::new(0.0, 0.0, 1.0)
+    }
 
-    fn set_transform(&mut self, transform: Transform) {
+    fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;
     }
 
-    fn set_inverse(&mut self, inverse: Transform) {
+    fn set_inverse(&mut self, inverse: Matrix4) {
         self.inverse = inverse;
     }
 
-    fn transform(&self) -> &Transform {
+    fn transform(&self) -> &Matrix4 {
         &self.transform
     }
 
-    fn inverse(&self) -> &Transform {
+    fn inverse(&self) -> &Matrix4 {
         &self.inverse
     }
 }
 
 pub struct Disk{
-    transform: Transform,
-    inverse:   Transform,
+    transform: Matrix4,
+    inverse:   Matrix4,
     material: Arc<dyn Material>,
 }
 
@@ -68,15 +77,15 @@ pub struct Disk{
 impl Disk {
     pub fn new(material: Arc<dyn Material>) -> Self {
         Self { 
-            transform: Transform::identity(),
-            inverse:   Transform::identity(),
+            transform: Matrix4::identity(),
+            inverse:   Matrix4::identity(),
             material ,
         }
     }
 }
 
 impl Object for Disk {
-    fn hit_world(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
 
         // Infinite solutions (div by 0).
         if ray.direction.z.abs() < 1e-6 {
@@ -94,24 +103,32 @@ impl Object for Disk {
             return None;
         }
 
-        let mut intersection = Intersection::new(point, self.material.clone(), t);
-        intersection.set_face_normal(ray, Vec3::new(0.0, 0.0, 1.0));
-        Some(intersection)
+        Some(Intersection::new(
+            self.inverse.transform_point(&point),
+            self.material.clone(),
+            t,
+            ray,
+            self.normal_at(&self.inverse.transform_point(&point)),
+        ))
     }
 
-    fn set_transform(&mut self, transform: Transform) {
+    fn normal_obj(&self, _point: &Point3) -> Vec3 {
+        Vec3::new(0.0, 0.0, 1.0)
+    }
+
+    fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;
     }
 
-    fn set_inverse(&mut self, inverse: Transform) {
+    fn set_inverse(&mut self, inverse: Matrix4) {
         self.inverse = inverse;
     }
 
-    fn transform(&self) -> &Transform {
+    fn transform(&self) -> &Matrix4 {
         &self.transform
     }
 
-    fn inverse(&self) -> &Transform {
+    fn inverse(&self) -> &Matrix4 {
         &self.inverse
     }
 }

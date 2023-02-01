@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::{Vec3, Point3, Rotation, Translation, Transform, Scale, Axis};
+use crate::{Vec3, Point3, Rotation, Translation, Scale, Axis, Matrix4};
 use crate::material::Material;
 use crate::ray::Ray;
 
@@ -26,13 +26,23 @@ pub struct Intersection {
 
 impl Intersection {
 
-    pub fn new(incidence_point: Point3, material: Arc<dyn Material>, t: f64) -> Self {
+    pub fn new(
+        incidence_point: Point3, 
+        material: Arc<dyn Material>, 
+        t: f64,
+        ray: &Ray,
+        outward_normal: Vec3,
+    ) -> Self {
+        
+        let front_face = ray.direction.dot(&outward_normal) < 0.0;
+        let normal = if front_face { outward_normal } else { -outward_normal };
+
         Self {
             incidence_point,
-            normal: Vec3::default(),
+            normal,
             material,
             t,
-            front_face: false,
+            front_face,
         }
     }
 
@@ -44,21 +54,31 @@ impl Intersection {
 
 // An object is something that can be hit by a ray.
 pub trait Object: Send + Sync {
-    // Returns true if the ray hits the object in world space.
-    fn hit_world(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
+    // Returns true if the ray hits the object in object space.
+    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
 
-    fn transform(&self) -> &Transform;
+    fn normal_obj(&self, point: &Point3) -> Vec3;
 
-    fn inverse(&self) -> &Transform;
+    fn transform(&self) -> &Matrix4;
 
-    fn set_transform(&mut self, transform: Transform);
+    fn inverse(&self) -> &Matrix4;
+
+    fn set_transform(&mut self, transform: Matrix4);
 
     // Inversion rule: (A * B)^-1 = B^-1 * A^-1
-    fn set_inverse(&mut self, inverse: Transform);
+    fn set_inverse(&mut self, inverse: Matrix4);
 
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         let inv_ray = ray.transform(self.inverse()); // Convert ray to object space.
-        self.hit_world(&inv_ray, t_min, t_max)
+        self.hit_obj(&inv_ray, t_min, t_max)
+    }
+
+    fn normal_at(&self, point: &Point3) -> Vec3 {
+        let obj_point = self.inverse().transform_point(point);
+        let obj_normal = self.normal_obj(&obj_point);
+        let world_normal = self.inverse().transpose() * obj_normal.to_homogeneous();
+        let world_normal = Vec3::new(world_normal.x, world_normal.y, world_normal.z);
+        world_normal.normalize()
     }
 
     fn rotate(&mut self, axis: Axis, angle: f64) {
@@ -66,26 +86,27 @@ pub trait Object: Send + Sync {
             Axis::X => Rotation::from_axis_angle(&Vec3::x_axis(), angle),
             Axis::Y => Rotation::from_axis_angle(&Vec3::y_axis(), angle),
             Axis::Z => Rotation::from_axis_angle(&Vec3::z_axis(), angle),
-        };
+        }.to_homogeneous();
+        
+        let inv = rotation.try_inverse().expect("Rotation matrix is not invertible.");
         self.set_transform(self.transform() * rotation);
-        self.set_inverse(rotation.inverse() * self.inverse());
+        self.set_inverse(inv * self.inverse());
     }
 
     fn translate(&mut self, x: f64, y: f64, z: f64) {
-        let translation = Translation::new(x, y, z);
+        let translation = Translation::new(x, y, z).to_homogeneous();
         self.set_transform(self.transform() * translation);
-        self.set_inverse(translation.inverse() * self.inverse());
+        
+        let inv = translation.try_inverse().expect("Translation matrix is not invertible.");
+        self.set_inverse(inv * self.inverse());
     }
 
     fn scale(&mut self, x: f64, y: f64, z: f64) {
         let scale = Scale::new(x, y, z).to_homogeneous();
         let inv = scale.try_inverse().expect("Scale matrix is not invertible.");
 
-        let new_transform = self.transform().matrix() * scale;
-        self.set_transform(Transform::from_matrix_unchecked(new_transform));
-        
-        let new_inverse = inv * self.inverse().matrix();
-        self.set_inverse(Transform::from_matrix_unchecked(new_inverse));
+        self.set_transform(self.transform() * scale);
+        self.set_inverse(inv * self.inverse());
     }
 
     fn scale_uniform(&mut self, scale: f64) {

@@ -1,0 +1,74 @@
+camera: 
+  look_from: [0, 0, 8]
+  look_at: [30, 30, 0]
+  vup: [0, 0, 1]
+  vfov: 30
+  aperture: 0
+  focus_dist: 10
+
+objects:
+
+  - type: !Plane
+    material: !Metal
+      colour: [0.8, 0.5, 0.8]
+      fuzz: 0.15
+    transform:
+      - !Translate [30, 30, 0]
+
+  - type: !Sphere
+    material: !Dielectric
+      refraction_index: 1.52
+    transform:
+      - !Translate [30, 30, 5]
+      - !Scale [5, 5, 5]
+
+  - type: !Sphere
+    material: !Dielectric
+      refraction_index: 1.52
+    transform:
+      - !Translate [30, 30, 5]
+      - !Scale [3, 3, 3]
+  
+
+  - type: !Sphere
+    material: !Lambertian
+      colour: [0.5, 0, 0]
+    transform:
+      - !Translate [40, 30, 5]
+      - !Scale [5, 5, 5]
+
+  - type: !Sphere
+    material: !Metal
+      colour: [0.7, 0.6, 0.5]
+      fuzz: 0
+    transform:
+      - !Translate [20, 28, 5]
+      - !Scale [5, 5, 5]
+
+  - type: !Sphere
+    material: !Metal
+      colour: [0.2, 0.8, 0.3]
+      fuzz: 0
+    transform:
+      - !Translate [35, 20, 2]
+      - !Scale [2, 2, 2]
+
+  - type: !Sphere
+    material: !Dielectric
+      refraction_index: 1.52
+    transform:
+      - !Translate [25, 20, 2]
+      - !Scale [2, 2, 2]
+
+  - type: !Sphere
+    material: !Lambertian
+      colour: [0, 0.5, 0]
+    transform:
+      - !Translate [14, 30, 2]
+      - !Scale [2, 2, 2]
+
+  - type: !Sphere
+    material: !Lambertian
+      colour: [0, 0, 0.5]
+    transform:
+      - !Translate [25, 12, 1]

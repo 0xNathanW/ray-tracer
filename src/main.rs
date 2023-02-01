@@ -33,8 +33,6 @@ pub struct Args {
     pub max_depth: u32,
 }
 
-
-
 fn main() {
     let args = Args::parse();
     let dimensions = (args.width, args.height);

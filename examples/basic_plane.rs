@@ -36,11 +36,6 @@ fn plane_scene() -> Scene {
     let plane = Box::new(Plane::new(Arc::new(Lambertian::new(colour::GREEN))));
     objects.push(plane);
 
-    let mut disk = Box::new(Disk::new(Arc::new(Lambertian::new(colour::RED))));
-    disk.translate(30.0, 30.0, 4.0);
-    disk.scale(5.0, 5.0, 1.0);
-    objects.push(disk);
-
     let mut sphere = Box::new(Sphere::new(Arc::new(Lambertian::new(colour::BLUE))));
     sphere.translate(30.0, 30.0, 2.0);
     sphere.scale_uniform(2.0);

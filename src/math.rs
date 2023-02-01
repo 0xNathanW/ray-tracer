@@ -1,6 +1,6 @@
 use nalgebra::Unit;
 use rand::prelude::*;
-use crate::Vec3;
+use crate::{Vec3, Matrix4, Matrix3};
 
 pub fn rand_vec<R: Rng>(rng: &mut R) -> Vec3 {
     Vec3::new(rng.gen(), rng.gen(), rng.gen())
@@ -44,4 +44,20 @@ pub fn rand_in_unit_disk<R: Rng>(rng: &mut R) -> Vec3 {
 pub fn near_zero(v: &Vec3) -> bool {
     let s = 1e-8;
     v.x.abs() < s && v.y.abs() < s && v.z.abs() < s
+}
+
+pub fn submatrix(m: &Matrix4, row: usize, col: usize) -> Matrix3 {
+    let mut result = Matrix3::zeros();
+    for r in 0..3 {
+        for c in 0..3 {
+            result[(r, c)] = m[(r + if r >= row { 1 } else { 0 }, c + if c >= col { 1 } else { 0 })];
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+pub fn fuzzy_eq(a: &Vec3, b: &Vec3) -> bool {
+    let s = 0.0001;
+    (a.x - b.x).abs() < s && (a.y - b.y).abs() < s && (a.z - b.z).abs() < s
 }

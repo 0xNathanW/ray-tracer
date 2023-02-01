@@ -6,6 +6,7 @@ pub mod object;
 pub mod scene;
 pub mod camera;
 pub mod material;
+pub mod light;
 pub mod render;
 mod math;
 mod io;

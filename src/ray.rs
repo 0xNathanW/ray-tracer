@@ -1,4 +1,4 @@
-use crate::{Point3, Vec3, Transform};
+use crate::{Point3, Vec3, Matrix4};
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Ray{
@@ -19,14 +19,15 @@ impl Ray {
         point - self.origin
     }
 
-    pub fn transform(&self, transform: &Transform) -> Self {
+    pub fn transform(&self, transform: &Matrix4) -> Self {
         Self {
-            origin: transform * self.origin,
-            direction: transform * self.direction,
+            origin: transform.transform_point(&self.origin),
+            direction: transform.transform_vector(&self.direction),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    
 }
