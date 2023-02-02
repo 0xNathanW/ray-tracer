@@ -2,7 +2,7 @@ use std::ops::{Mul, Add, AddAssign};
 use rand::Rng;
 use crate::Vec3;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Colour {
     r: f64,
     g: f64,

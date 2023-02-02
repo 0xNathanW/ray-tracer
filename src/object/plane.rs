@@ -10,12 +10,12 @@ use crate::object::Intersection;
 pub struct Plane {
     transform: Matrix4,
     inverse:   Matrix4,
-    material: Arc<dyn Material>,
+    material: Arc<Material>,
 }
 
 // Non-transformed plane has its origin at the world's origin and its normal is the y-axis.
 impl Plane {
-    pub fn new(material: Arc<dyn Material>) -> Self {
+    pub fn new(material: Arc<Material>) -> Self {
         Self {
             transform: Matrix4::identity(),
             inverse:   Matrix4::identity(),
@@ -25,23 +25,29 @@ impl Plane {
 }
 
 impl Object for Plane {
-    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit_obj(
+        &self, 
+        obj_ray: &Ray, 
+        world_ray: &Ray,
+        t_min: f64, 
+        t_max: f64
+    ) -> Option<Intersection> {
         // Infinite solutions (div by 0).
-        if ray.direction.z.abs() < 1e-6 {
+        if obj_ray.direction.z.abs() < 1e-6 {
             return None;
         }
         
-        let t = -ray.origin.z / ray.direction.z;
+        let t = -obj_ray.origin.z / obj_ray.direction.z;
         if t < t_min || t > t_max {
             None
         } else {
-            let point = ray.at(t);
+            let point = world_ray.at(t);
             Some(Intersection::new(
-                self.inverse.transform_point(&point),
+                point,
                 self.material.clone(),
                 t,
-                ray,
-                self.normal_at(&self.inverse.transform_point(&point)),
+                world_ray,
+                self.normal_at(&point),
             ))
         }
     }
@@ -70,12 +76,12 @@ impl Object for Plane {
 pub struct Disk{
     transform: Matrix4,
     inverse:   Matrix4,
-    material: Arc<dyn Material>,
+    material: Arc<Material>,
 }
 
 // A disk is a plane with a radius.
 impl Disk {
-    pub fn new(material: Arc<dyn Material>) -> Self {
+    pub fn new(material: Arc<Material>) -> Self {
         Self { 
             transform: Matrix4::identity(),
             inverse:   Matrix4::identity(),
@@ -85,30 +91,37 @@ impl Disk {
 }
 
 impl Object for Disk {
-    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit_obj(
+        &self, 
+        obj_ray: &Ray, 
+        world_ray: &Ray,
+        t_min: f64, 
+        t_max: f64
+    ) -> Option<Intersection> {
 
         // Infinite solutions (div by 0).
-        if ray.direction.z.abs() < 1e-6 {
+        if obj_ray.direction.z.abs() < 1e-6 {
             return None;
         }
         
-        let t = -ray.origin.z / ray.direction.z;
+        let t = -obj_ray.origin.z / obj_ray.direction.z;
         if t < t_min || t > t_max {
             return None;
         }
 
-        let point = ray.at(t);
+        let point = obj_ray.at(t);
         let distance = (point - Point3::origin()).magnitude();
         if distance > 1.0 {
             return None;
         }
 
+        let point = world_ray.at(t);
         Some(Intersection::new(
-            self.inverse.transform_point(&point),
+            point,
             self.material.clone(),
             t,
-            ray,
-            self.normal_at(&self.inverse.transform_point(&point)),
+            world_ray,
+            self.normal_at(&point),
         ))
     }
 

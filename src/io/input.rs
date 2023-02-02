@@ -12,14 +12,15 @@ use crate::{
     Camera,
     Vec3, 
     Colour,
+    light::Light,
 };
 use crate::object::{Sphere, Plane, Disk};
-use crate::material::{Lambertian, Metal, Dielectric};
 
 #[derive(Deserialize, Debug)]
 pub struct Inputs {
     camera:  CameraInputs,
     objects: Vec<ObjectInputs>,
+    lights:  Vec<LightInputs>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -47,17 +48,18 @@ pub enum ObjectType {
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
-pub enum MaterialInputs {
-    Lambertian {
-        colour: (f64, f64, f64),
-    },
-    Metal {
-        colour: (f64, f64, f64),
-        fuzz:   f64,
-    },
-    Dielectric {
-        refraction_index: f64,
-    },
+pub struct MaterialInputs {
+    colour: (f64, f64, f64),
+    #[serde(default = "ambient_default")]
+    ambient: f64,
+    #[serde(default = "diffuse_default")]
+    diffuse: f64,
+    #[serde(default = "specular_default")]
+    specular: f64,
+    #[serde(default = "shininess_default")]
+    shininess: f64,
+    #[serde(default = "reflectivity_default")]
+    reflectivity: f64,
 }
 
 #[allow(non_camel_case_types)]
@@ -65,9 +67,16 @@ pub enum MaterialInputs {
 pub enum TransformationInput {
     Translate(f64, f64, f64),
     Scale(f64, f64, f64),
+    Scale_uniform(f64),
     Rotate_x(f64),
     Rotate_y(f64),
     Rotate_z(f64),
+}
+
+#[derive(Deserialize, Debug)]
+struct LightInputs {
+    position: (f64, f64, f64),
+    colour:   (f64, f64, f64),
 }
 
 pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(Arc<Scene>, Camera)> {
@@ -99,21 +108,21 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
         }
         objects.push(object);
     });
-    Ok((Arc::new(Scene::new(objects)), camera))
+
+    let lights = parse_lights(a.lights);
+
+    Ok((Arc::new(Scene::new(objects, lights)), camera))
 }
 
-fn parse_material(material: MaterialInputs) -> Arc<dyn Material> {
-    match material {
-        MaterialInputs::Lambertian { colour } => {
-            Arc::new(Lambertian::new(Colour::new(colour.0, colour.1, colour.2)))
-        },
-        MaterialInputs::Metal { colour, fuzz } => {
-            Arc::new(Metal::new(Colour::new(colour.0, colour.1, colour.2), fuzz))
-        },
-        MaterialInputs::Dielectric { refraction_index } => {
-            Arc::new(Dielectric::new(refraction_index))
-        },
-    }
+fn parse_material(material: MaterialInputs) -> Arc<Material> {
+    Arc::new(Material::new(
+        Colour::new(material.colour.0, material.colour.1, material.colour.2),
+        material.ambient,
+        material.diffuse,
+        material.specular,
+        material.shininess,
+        material.reflectivity,
+    ))
 }
 
 fn parse_and_apply_transformations(obj: &mut dyn Object, transformations: Vec<TransformationInput>) {
@@ -124,6 +133,9 @@ fn parse_and_apply_transformations(obj: &mut dyn Object, transformations: Vec<Tr
             },
             TransformationInput::Scale(x, y, z) => {
                 obj.scale(x, y, z);
+            },
+            TransformationInput::Scale_uniform(s) => {
+                obj.scale_uniform(s);
             },
             TransformationInput::Rotate_x(angle) => {
                 obj.rotate(Axis::X, angle)
@@ -136,6 +148,35 @@ fn parse_and_apply_transformations(obj: &mut dyn Object, transformations: Vec<Tr
             },
         }
     });
+}
+
+fn parse_lights(lights: Vec<LightInputs>) -> Vec<Light> {
+    lights.into_iter().map(|light| {
+        Light::new(
+            Point3::new(light.position.0, light.position.1, light.position.2),
+            Colour::new(light.colour.0, light.colour.1, light.colour.2),
+        )
+    }).collect()
+}
+
+fn ambient_default() -> f64 {
+    0.1
+}
+
+fn diffuse_default() -> f64 {
+    0.9
+}
+
+fn specular_default() -> f64 {
+    0.9
+}
+
+fn shininess_default() -> f64 {
+    200.0
+}
+
+fn reflectivity_default() -> f64 {
+    0.0
 }
 
 #[cfg(test)]
@@ -157,11 +198,15 @@ mod tests {
 
             objects:
                 - type: !Sphere
-                  material: !Lambertian
-                    colour: [0.8, 0.3, 0.3]
+                  material:
+                    colour: [1.0, 0.2, 1.0]
                   transform:
                     - !Translate [0.0, 0.0, -1.0]
                     - !Scale [0.5, 0.5, 0.5]
+
+            lights:
+                - position: [0.0, 0.0, -10.0]
+                  colour:   [1.0, 1.0, 1.0]
         ";
 
         let a: Inputs = serde_yaml::from_str(yaml).unwrap();
@@ -174,19 +219,40 @@ mod tests {
 
         assert_eq!(a.objects.len(), 1);
         assert_eq!(a.objects[0].r#type, ObjectType::Sphere);
-        assert_eq!(a.objects[0].material, MaterialInputs::Lambertian { colour: (0.8, 0.3, 0.3) });
+        assert_eq!(a.objects[0].material, 
+            MaterialInputs {
+                colour: (1.0, 0.2, 1.0),
+                ambient: ambient_default(),
+                diffuse: diffuse_default(),
+                specular: specular_default(),
+                shininess: shininess_default(),
+                reflectivity: reflectivity_default(),
+            });
         assert_eq!(a.objects[0].transform, Some(vec![
             TransformationInput::Translate(0.0, 0.0, -1.0),
             TransformationInput::Scale(0.5, 0.5, 0.5),
         ]));
+
+        assert_eq!(a.lights.len(), 1);
+        assert_eq!(a.lights[0].position, (0.0, 0.0, -10.0));
+        assert_eq!(a.lights[0].colour, (1.0, 1.0, 1.0));
     }
 
     #[test]
     fn test_input_from_file() {
 
-        let a: Inputs = serde_yaml::from_slice(&read("scenes/test_scene.yaml").unwrap()).unwrap();
-        assert_eq!(a.camera.look_from, (1.0, 2.0, 3.0));
-        assert_eq!(a.camera.look_at, (4.0, 5.0, 6.0));
-        assert_eq!(a.objects[0].material, MaterialInputs::Lambertian { colour: (0.8, 0.3, 0.3) });
+        let a: Inputs = serde_yaml::from_slice(&read("scenes/single_sphere.yaml").unwrap()).unwrap();
+        assert_eq!(a.camera.look_from, (0.0, 0.0, 2.0));
+        assert_eq!(a.camera.look_at, (2.0, 2.0, 2.0));
+        assert_eq!(a.objects[0].material, 
+            MaterialInputs {
+                colour: (1.0, 0.2, 1.0),
+                ambient: ambient_default(),
+                diffuse: diffuse_default(),
+                specular: specular_default(),
+                shininess: shininess_default(),
+                reflectivity: reflectivity_default(),
+        });
+        assert_eq!(a.lights[0].position, (-10.0, 30.0, 20.0));
     }
 }

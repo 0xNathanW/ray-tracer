@@ -1,56 +1,73 @@
-use crate::{Vec3, Matrix4};
+use crate::colour::BLACK;
+use crate::{Colour, Point3, Material};
 use crate::object::{Object, Intersection};
 use crate::ray::Ray;
+use crate::light::Light;
 
 #[derive(Default)]
 pub struct Scene {
-    pub transform: Matrix4,
-    pub inverse:   Matrix4,
-    pub objects: Vec<Box<dyn Object>>
+    pub objects: Vec<Box<dyn Object>>,
+    pub lights:  Vec<Light>,
 }
 
 impl Scene {
-    pub fn new(objects: Vec<Box<dyn Object>>) -> Self {
+    pub fn new(objects: Vec<Box<dyn Object>>, lights: Vec<Light>) -> Self {
         Self {
-            transform: Matrix4::identity(),
-            inverse:   Matrix4::identity(),
-            objects
+            objects,
+            lights,
         }
     }
-}
 
-impl Object for Scene {
-    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
-        let mut hit = None;
-        let mut closest_so_far = t_max;
+    pub fn hit(&self, ray: &Ray) -> Vec<Intersection> {
+        self.objects.iter()
+            .filter_map(|obj| obj.hit(ray, 0.001, f64::INFINITY))
+            .collect()
+    }
 
-        for object in self.objects.iter() {
-            // If ray hits object before closest_so_far, update hit_record.
-            if let Some(rec) = object.hit(ray, t_min, closest_so_far) {
-                closest_so_far = rec.t;
-                hit = Some(rec);
+    pub fn colour_at(&self, ray: &Ray, depth: usize) -> Colour {
+
+        let mut hits = self.hit(&ray);
+        hits.sort_unstable_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+        
+        for hit in hits {
+            let in_shadow = self.is_shadowed(&hit.over_point);
+            let surface_colour = hit.material.light(&self.lights[0], &hit, in_shadow);
+            let reflected_colour = self.reflected_colour_at(&hit.material, &hit, depth);
+            return surface_colour + reflected_colour;
+        }
+        
+        // Background colour.
+        let unit_direction = ray.direction.normalize();
+        let t = 0.5 * (unit_direction.z + 1.0);
+        (1.0 - t) * Colour::new(1.0, 1.0, 1.0) + t * Colour::new(0.5, 0.7, 1.0)
+    }
+
+    fn reflected_colour_at(&self, material: &Material, hit: &Intersection, depth: usize) -> Colour {
+        if depth == 0 || material.reflectiveness() == 0.0 {
+            return BLACK;
+        }
+
+        let reflected = Ray::new(hit.over_point, hit.reflect);
+        self.colour_at(&reflected, depth - 1) * material.reflectiveness()
+    }
+
+    fn is_shadowed(&self, point: &Point3) -> bool {
+        let shadow_vec = self.lights[0].position - point;
+        
+        let distance = shadow_vec.magnitude();
+        let direction = shadow_vec.normalize();
+
+        let shadow_ray = Ray::new(*point, direction);
+        let hits = self.hit(&shadow_ray);
+        if !hits.is_empty() {
+            let hit = &hits[0];
+            if hit.t < distance {
+                true
+            } else {
+                false
             }
+        } else {
+            false
         }
-        hit
-    }
-
-    fn normal_obj(&self, _point: &crate::Point3) -> crate::Vec3 {
-        Vec3::new(0.0, 0.0, 1.0)
-    }
-
-    fn set_transform(&mut self, transform: Matrix4) {
-        self.transform = transform;
-    }
-
-    fn set_inverse(&mut self, inverse: Matrix4) {
-        self.inverse = inverse;
-    }
-
-    fn transform(&self) -> &Matrix4 {
-        &self.transform
-    }
-
-    fn inverse(&self) -> &Matrix4 {
-        &self.inverse
     }
 }

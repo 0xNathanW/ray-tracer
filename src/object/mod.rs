@@ -2,6 +2,7 @@ use std::sync::Arc;
 use crate::{Vec3, Point3, Rotation, Translation, Scale, Axis, Matrix4};
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::math;
 
 mod sphere;
 mod plane;
@@ -13,22 +14,27 @@ pub use bbox::{AxisAlignedBoundingBox, BoundingBox};
 
 pub struct Intersection {
     // The point at which the ray hit the object.
-    pub incidence_point: Point3,
+    pub point: Point3,
     // The normal of the object at the point of incidence.
     pub normal: Vec3,
     // Material will be shared between threads.
-    pub material: Arc<dyn Material>,
+    pub material: Arc<Material>,
     // Hit only if t is t_min < t < t_max.
     pub t: f64,
     // True if the ray hit the front of the object.
     pub front_face: bool,
+    // Direction to camera.
+    pub eye: Vec3,
+    // Reflection vector.
+    pub reflect: Vec3,
+    pub over_point: Point3,
 }
 
 impl Intersection {
 
     pub fn new(
-        incidence_point: Point3, 
-        material: Arc<dyn Material>, 
+        point: Point3, 
+        material: Arc<Material>,
         t: f64,
         ray: &Ray,
         outward_normal: Vec3,
@@ -36,13 +42,19 @@ impl Intersection {
         
         let front_face = ray.direction.dot(&outward_normal) < 0.0;
         let normal = if front_face { outward_normal } else { -outward_normal };
+        let eye = -ray.direction;
+        let reflect = math::reflect(&ray.direction, &normal);
+        let over_point = point + normal * 0.00001;
 
         Self {
-            incidence_point,
+            point,
             normal,
             material,
             t,
             front_face,
+            eye,
+            reflect,
+            over_point,
         }
     }
 
@@ -54,8 +66,8 @@ impl Intersection {
 
 // An object is something that can be hit by a ray.
 pub trait Object: Send + Sync {
-    // Returns true if the ray hits the object in object space.
-    fn hit_obj(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
+
+    fn hit_obj(&self, obj_ray: &Ray, world_ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
 
     fn normal_obj(&self, point: &Point3) -> Vec3;
 
@@ -69,8 +81,8 @@ pub trait Object: Send + Sync {
     fn set_inverse(&mut self, inverse: Matrix4);
 
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
-        let inv_ray = ray.transform(self.inverse()); // Convert ray to object space.
-        self.hit_obj(&inv_ray, t_min, t_max)
+        let obj_ray = ray.transform(self.inverse()); // Convert ray to object space.
+        self.hit_obj(&obj_ray, &ray, t_min, t_max)
     }
 
     fn normal_at(&self, point: &Point3) -> Vec3 {

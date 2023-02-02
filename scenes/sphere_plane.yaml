@@ -1,0 +1,25 @@
+camera: 
+  look_from: [0, 0, 10]
+  look_at: [40, 40, 5]
+  vup: [0, 0, 1]
+  vfov: 15
+  aperture: 0
+  focus_dist: 1
+
+objects:
+
+  - type: !Sphere
+    material:
+      colour: [1, 0.2, 1]
+    transform:
+      - !Translate [50, 50, 4]
+      - !Scale_uniform 4
+
+  - type: !Plane
+    material:
+      colour: [0, 1, 0]
+
+lights:
+  - position: [-10, 30, 20]
+    colour: [1, 1, 1]
+

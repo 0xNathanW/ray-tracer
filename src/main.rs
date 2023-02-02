@@ -1,8 +1,8 @@
 use clap::Parser;
 use ray_tracer::OutputFormat;
-use ray_tracer::parse_scene;
 use ray_tracer::render;
 use ray_tracer::write_to_file;
+use ray_tracer::parse_scene;
 
 #[derive(Parser)]
 #[command(author = "NathanW", about = "A simple ray tracer.")]
@@ -37,8 +37,8 @@ fn main() {
     let args = Args::parse();
     let dimensions = (args.width, args.height);
     let (scene, camera) = parse_scene(&args.scene_path, dimensions).unwrap();
-    let image = render(scene, camera, dimensions, args.samples, args.max_depth);
-    write_to_file(&args.image_name, image, args.format, dimensions).unwrap();
+    let image = render(scene, camera, dimensions, 100, 0);
+    write_to_file("test", image, OutputFormat::PNG, dimensions).unwrap();
 }
 
 

@@ -1,13 +1,9 @@
 use std::sync::Arc;
-use std::ops::Deref;
-use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::Camera;
 use crate::Scene;
-use crate::ray::Ray;
 use crate::colour::Colour;
-use crate::Object;
 
 pub type Image = Vec<Vec<u8>>;
 
@@ -43,9 +39,8 @@ pub fn render(
                 let u = (i as f64 + rand::random::<f64>()) / (dimensions.0 - 1) as f64;
                 let v = (j as f64 + rand::random::<f64>()) / (dimensions.1 - 1) as f64;
                 let ray = camera.get_ray(u, v, &mut rng);
-                pixel_colour += ray_colour(&ray, scene.deref(), max_depth as usize, &mut rng);
+                pixel_colour += scene.colour_at(&ray, max_depth as usize);
             }
-            
             pixel_colour.gamma_correct(samples_per_pixel);
 
             let rgb: Vec<u8> = pixel_colour.into();
@@ -62,26 +57,26 @@ pub fn render(
     pixels
 }
 
-pub fn ray_colour(ray: &Ray, obj: &dyn Object, depth: usize, rng: &mut ThreadRng) -> Colour {
+// pub fn ray_colour(ray: &Ray, obj: &dyn Object, depth: usize, rng: &mut ThreadRng) -> Colour {
         
-    if depth == 0 {
-        return Colour::default();
-    }
+//     if depth == 0 {
+//         return Colour::default();
+//     }
 
-    if let Some(hit_rec) = obj.hit(ray, 0.001, f64::INFINITY) {
-        let mut scattered = Ray::default();
-        let mut attenuation = Colour::default();
+//     if let Some(hit_rec) = obj.hit(ray, 0.001, f64::INFINITY) {
+//         let mut scattered = Ray::default();
+//         let mut attenuation = Colour::default();
     
-        if hit_rec.material.scatter(ray, &hit_rec, &mut attenuation, &mut scattered, rng) {
-            attenuation * ray_colour(&scattered, obj, depth - 1, rng)
-        } else {
-            Colour::default()
-        }
+//         if hit_rec.material.scatter(ray, &hit_rec, &mut attenuation, &mut scattered, rng) {
+//             attenuation * ray_colour(&scattered, obj, depth - 1, rng)
+//         } else {
+//             Colour::default()
+//         }
     
-    } else {
-        // Background colour.
-        let unit_direction = ray.direction.normalize();
-        let t = 0.5 * (unit_direction.y + 1.0);
-        (1.0 - t) * Colour::new(1.0, 1.0, 1.0) + t * Colour::new(0.5, 0.7, 1.0)
-    }
-}
+//     } else {
+//         // Background colour.
+//         let unit_direction = ray.direction.normalize();
+//         let t = 0.5 * (unit_direction.y + 1.0);
+//         (1.0 - t) * Colour::new(1.0, 1.0, 1.0) + t * Colour::new(0.5, 0.7, 1.0)
+//     }
+// }
