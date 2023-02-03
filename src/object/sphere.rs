@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crate::transform::Transformable;
 use crate::{Point3, Matrix4, Vec3};
-use crate::object::{Object, Intersection};
+use crate::object::Object;
 use crate::material::Material;
 use crate::ray::Ray;
 
@@ -27,10 +27,9 @@ impl Object for Sphere {
     fn hit_obj(
         &self, 
         obj_ray: &Ray, 
-        world_ray: &Ray, 
         t_min: f64, 
         t_max: f64
-    ) -> Option<Intersection> {
+    ) -> Option<f64> {
 
         let oc = obj_ray.origin - Point3::origin();
         // Equation to solve: t^2 * dot(B, B) + 2t * dot(B, A-C) + dot(A-C, A-C) - R^2 = 0
@@ -54,18 +53,15 @@ impl Object for Sphere {
             }
         }
 
-        let point = obj_ray.at(root);
-        Some(Intersection::new(
-            point,
-            self.material.clone(),
-            root,
-            world_ray,
-            self.normal_at(&point),
-        ))
+        Some(root)
     }
 
     fn normal_obj(&self, point: &Point3) -> Vec3 {
         (point - Point3::origin()).normalize()
+    }
+
+    fn material(&self) -> &Arc<Material> {
+        &self.material
     }
 }
 

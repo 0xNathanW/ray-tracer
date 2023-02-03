@@ -7,8 +7,9 @@ pub trait Pattern: Transformable + Send + Sync + Debug {
     
     fn colour_at_pattern(&self, point: &Point3) -> Colour;
 
-    fn colour_at(&self, point: &Point3) -> Colour {
-        let pattern_point = self.inverse().transform_point(point);
+    fn colour_at(&self, point: &Point3, obj_inverse: &Matrix4) -> Colour {
+        let obj_point = obj_inverse.transform_point(point);
+        let pattern_point = self.inverse().transform_point(&obj_point);
         self.colour_at_pattern(&pattern_point)
     }
 }

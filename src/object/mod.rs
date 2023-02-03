@@ -1,9 +1,9 @@
 use std::fmt::Debug;
 use std::sync::Arc;
-use crate::{Vec3, Point3};
+use crate::{Vec3, Point3, Colour};
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::math;
+use crate::math::reflect;
 use crate::transform::Transformable;
 
 mod sphere;
@@ -14,11 +14,10 @@ pub use sphere::Sphere;
 pub use plane::{Plane, Disk};
 pub use bbox::{AxisAlignedBoundingBox, BoundingBox};
 
+#[derive(Debug, Default)]
 pub struct Intersection {
     // The point at which the ray hit the object.
     pub point: Point3,
-    // Point hit in object space.
-    pub obj_point: Point3,
     // The normal of the object at the point of incidence.
     pub normal: Vec3,
     // Material will be shared between threads.
@@ -33,58 +32,53 @@ pub struct Intersection {
     pub reflect: Vec3,
     // Point slightly above the surface.
     pub over_point: Point3,
-}
-
-impl Intersection {
-
-    pub fn new(
-        obj_point: Point3,
-        material: Arc<Material>,
-        t: f64,
-        world_ray: &Ray,
-        outward_normal: Vec3,
-    ) -> Self {
-        
-        let point = world_ray.at(t);
-
-        let front_face = world_ray.direction.dot(&outward_normal) < 0.0;
-        let normal = if front_face { outward_normal } else { -outward_normal };
-        
-        let eye = -world_ray.direction;
-        
-        let reflect = math::reflect(&world_ray.direction, &normal);
-        
-        let over_point = point + normal * 0.00001;
-
-        Self {
-            point,
-            obj_point,
-            normal,
-            material,
-            t,
-            front_face,
-            eye,
-            reflect,
-            over_point,
-        }
-    }
-
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
-        self.front_face = ray.direction.dot(&outward_normal) < 0.0;
-        self.normal = if self.front_face { outward_normal } else { -outward_normal };
-    }
+    // Colour of material/pattern.
+    pub colour: Colour,
 }
 
 // An object is something that can be hit by a ray.
 pub trait Object: Transformable + Send + Sync + Debug {
 
-    fn hit_obj(&self, obj_ray: &Ray, world_ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
-
+    // Returns the point on ray at t if the ray hits the object.
+    fn hit_obj(&self, obj_ray: &Ray, t_min: f64, t_max: f64) -> Option<f64>;
+    
     fn normal_obj(&self, point: &Point3) -> Vec3;
+    
+    fn material(&self) -> &Arc<Material>;
 
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+        
         let obj_ray = ray.transform(self.inverse()); // Convert ray to object space.
-        self.hit_obj(&obj_ray, &ray, t_min, t_max)
+        let t = self.hit_obj(&obj_ray, t_min, t_max);
+        
+        if let Some(t) = t {
+            
+            let point = ray.at(t);
+
+            let outward_normal = self.normal_at(&point);
+            let eye = -ray.direction;
+            let front_face = ray.direction.dot(&outward_normal) < 0.0;
+            let normal = if front_face { outward_normal } else { -outward_normal };
+            
+            let reflect = reflect(&ray.direction, &normal);
+            let over_point = point + normal * 0.0001;
+            let colour = self.material().colour_at(&point, self.inverse());
+
+            Some(Intersection {
+                point,
+                normal,
+                material: self.material().clone(),
+                t,
+                front_face,
+                eye,
+                reflect,
+                over_point,
+                colour,
+            }) 
+
+        } else {
+            None
+        }
     }
 
     fn normal_at(&self, point: &Point3) -> Vec3 {
@@ -94,4 +88,6 @@ pub trait Object: Transformable + Send + Sync + Debug {
         let world_normal = Vec3::new(world_normal.x, world_normal.y, world_normal.z);
         world_normal.normalize()
     }
+
+
 }

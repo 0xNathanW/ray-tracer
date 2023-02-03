@@ -28,11 +28,14 @@ impl Scene {
 
         let mut hits = self.hit(&ray);
         hits.sort_unstable_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-        
+
         for hit in hits {
+
             let in_shadow = self.is_shadowed(&hit.over_point);
+
             let surface_colour = hit.material.light(&self.lights[0], &hit, in_shadow);
             let reflected_colour = self.reflected_colour_at(&hit.material, &hit, depth);
+            
             return surface_colour + reflected_colour;
         }
         

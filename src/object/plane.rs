@@ -3,7 +3,6 @@ use crate::{Vec3, Point3, Matrix4};
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::object::Object;
-use crate::object::Intersection;
 use crate::transform::Transformable;
 
 // A plane can be defined as a point representing how far the plane is from the world's origin and a normal (defining the orientation of the plane).
@@ -29,33 +28,29 @@ impl Plane {
 impl Object for Plane {
     fn hit_obj(
         &self, 
-        obj_ray: &Ray, 
-        world_ray: &Ray,
+        ray: &Ray,
         t_min: f64, 
         t_max: f64
-    ) -> Option<Intersection> {
+    ) -> Option<f64> {
         // Infinite solutions (div by 0).
-        if obj_ray.direction.z.abs() < 1e-6 {
+        if ray.direction.z.abs() < 1e-6 {
             return None;
         }
         
-        let t = -obj_ray.origin.z / obj_ray.direction.z;
+        let t = -ray.origin.z / ray.direction.z;
         if t < t_min || t > t_max {
             None
         } else {
-            let point = obj_ray.at(t);
-            Some(Intersection::new(
-                point,
-                self.material.clone(),
-                t,
-                world_ray,
-                self.normal_at(&point),
-            ))
+            Some(t)
         }
     }
     
     fn normal_obj(&self, _point: &Point3) -> Vec3 {
         Vec3::new(0.0, 0.0, 1.0)
+    }
+
+    fn material(&self) -> &Arc<Material> {
+        &self.material
     }
 }
 
@@ -101,10 +96,9 @@ impl Object for Disk {
     fn hit_obj(
         &self, 
         obj_ray: &Ray, 
-        world_ray: &Ray,
         t_min: f64, 
         t_max: f64
-    ) -> Option<Intersection> {
+    ) -> Option<f64> {
 
         // Infinite solutions (div by 0).
         if obj_ray.direction.z.abs() < 1e-6 {
@@ -119,21 +113,18 @@ impl Object for Disk {
         let point = obj_ray.at(t);
         let distance = (point - Point3::origin()).magnitude();
         if distance > 1.0 {
-            return None;
+            None
+        } else {
+            Some(t)
         }
-
-        let point = obj_ray.at(t);
-        Some(Intersection::new(
-            point,
-            self.material.clone(),
-            t,
-            world_ray,
-            self.normal_at(&point),
-        ))
     }
 
     fn normal_obj(&self, _point: &Point3) -> Vec3 {
         Vec3::new(0.0, 0.0, 1.0)
+    }
+
+    fn material(&self) -> &Arc<Material> {
+        &self.material
     }
 }
 

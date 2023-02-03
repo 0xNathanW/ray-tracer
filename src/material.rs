@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::colour::{Colour, BLACK};
-use crate::{Intersection};
+use crate::{Intersection, Matrix4, Point3};
 use crate::light::Light;
 use crate::math::reflect;
 use crate::pattern::Pattern;
@@ -53,7 +53,7 @@ impl Material {
 
     pub fn light(&self, light: &Light, hit: &Intersection, in_shadow: bool) -> Colour {
 
-        let effective_colour = self.colour * light.intensity;
+        let effective_colour = hit.colour * light.intensity;
         let ambient = effective_colour * self.ambient;
 
         if in_shadow {
@@ -61,14 +61,14 @@ impl Material {
         }
 
         let light_direction = (light.position - hit.point).normalize();
-        let light_dot_normal = light_direction.dot(&hit.normal);
-        
+        let light_dot_normal = light_direction.dot(&hit.normal);    // THIS IS ALWAYS NEGATIVE
         let (diffuse, specular) = if light_dot_normal < 0.0 {
             // Light is on the other side of the surface.
             (BLACK, BLACK)
         } else { 
-            
+              
             let diffuse = effective_colour * self.diffuse * light_dot_normal;
+
             let reflect_direction = reflect(&(-light_direction), &hit.normal);
             let reflect_dot_eye = reflect_direction.dot(&hit.eye);
 
@@ -81,11 +81,18 @@ impl Material {
 
             (diffuse, specular)
         };
-
         ambient + diffuse + specular
     }
 
     pub fn reflectiveness(&self) -> f64 {
         self.reflectiveness
+    }
+
+    pub fn colour_at(&self, point: &Point3, inverse: &Matrix4) -> Colour {
+        if let Some(pattern) = &self.pattern {
+            pattern.colour_at(point, inverse)
+        } else {
+            self.colour
+        }
     }
 }
