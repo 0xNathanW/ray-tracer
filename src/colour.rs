@@ -1,4 +1,4 @@
-use std::ops::{Mul, Add, AddAssign};
+use std::ops::{Mul, Add, AddAssign, Sub};
 use rand::Rng;
 use crate::Vec3;
 
@@ -119,5 +119,17 @@ impl AddAssign<Colour> for Colour {
         self.r += rhs.r;
         self.g += rhs.g;
         self.b += rhs.b;
+    }
+}
+
+impl Sub<Colour> for Colour {
+    type Output = Colour;
+
+    fn sub(self, rhs: Colour) -> Self::Output {
+        Colour {
+            r: self.r - rhs.r,
+            g: self.g - rhs.g,
+            b: self.b - rhs.b,
+        }
     }
 }

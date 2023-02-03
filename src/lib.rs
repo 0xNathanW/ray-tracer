@@ -8,6 +8,8 @@ pub mod camera;
 pub mod material;
 pub mod light;
 pub mod render;
+pub mod pattern;
+mod transform;
 mod math;
 mod io;
 
@@ -18,6 +20,7 @@ pub use scene::Scene;
 pub use camera::Camera;
 pub use io::{OutputFormat, write_to_file, parse_scene};
 pub use render::{render, Image};
+pub use light::Light;
 
 // Type aliases.
 pub type Point3       = nalgebra::Point3<f64>;

@@ -1,9 +1,11 @@
 use std::sync::Arc;
+use crate::transform::Transformable;
 use crate::{Point3, Matrix4, Vec3};
 use crate::object::{Object, Intersection};
 use crate::material::Material;
 use crate::ray::Ray;
 
+#[derive(Debug)]
 pub struct Sphere {
     transform: Matrix4,
     inverse:   Matrix4,
@@ -52,7 +54,7 @@ impl Object for Sphere {
             }
         }
 
-        let point = world_ray.at(root);
+        let point = obj_ray.at(root);
         Some(Intersection::new(
             point,
             self.material.clone(),
@@ -65,6 +67,9 @@ impl Object for Sphere {
     fn normal_obj(&self, point: &Point3) -> Vec3 {
         (point - Point3::origin()).normalize()
     }
+}
+
+impl Transformable for Sphere {
 
     fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;

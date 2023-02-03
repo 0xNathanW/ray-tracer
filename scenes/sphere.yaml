@@ -10,6 +10,11 @@ objects:
   - type: !Sphere
     material:
       colour: [1, 0.2, 1]
+      # pattern: 
+      #   type: !Rings
+      #   colour_a: [1, 0, 1]
+      #   colour_b: [0, 1, 0]
+
     transform:
       - !Translate [30, 30, 2]
       - !Scale_uniform 4

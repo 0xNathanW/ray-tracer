@@ -4,9 +4,11 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::object::Object;
 use crate::object::Intersection;
+use crate::transform::Transformable;
 
 // A plane can be defined as a point representing how far the plane is from the world's origin and a normal (defining the orientation of the plane).
 // We start by defining the point as the origin and the normal as the z-axis, then we can transform this to our liking.
+#[derive(Debug)]
 pub struct Plane {
     transform: Matrix4,
     inverse:   Matrix4,
@@ -41,7 +43,7 @@ impl Object for Plane {
         if t < t_min || t > t_max {
             None
         } else {
-            let point = world_ray.at(t);
+            let point = obj_ray.at(t);
             Some(Intersection::new(
                 point,
                 self.material.clone(),
@@ -55,6 +57,9 @@ impl Object for Plane {
     fn normal_obj(&self, _point: &Point3) -> Vec3 {
         Vec3::new(0.0, 0.0, 1.0)
     }
+}
+
+impl Transformable for Plane {
 
     fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;
@@ -73,6 +78,8 @@ impl Object for Plane {
     }
 }
 
+// A disk is a plane with a radius.
+#[derive(Debug)]
 pub struct Disk{
     transform: Matrix4,
     inverse:   Matrix4,
@@ -115,7 +122,7 @@ impl Object for Disk {
             return None;
         }
 
-        let point = world_ray.at(t);
+        let point = obj_ray.at(t);
         Some(Intersection::new(
             point,
             self.material.clone(),
@@ -128,6 +135,9 @@ impl Object for Disk {
     fn normal_obj(&self, _point: &Point3) -> Vec3 {
         Vec3::new(0.0, 0.0, 1.0)
     }
+}
+
+impl Transformable for Disk {
 
     fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;

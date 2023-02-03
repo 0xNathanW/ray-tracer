@@ -1,10 +1,14 @@
+use std::sync::Arc;
 use crate::colour::{Colour, BLACK};
-use crate::Intersection;
+use crate::{Intersection};
 use crate::light::Light;
 use crate::math::reflect;
+use crate::pattern::Pattern;
 
+#[derive(Debug)]
 pub struct Material {
     colour:         Colour,
+    pattern:        Option<Arc<dyn Pattern>>,
     ambient:        f64,
     diffuse:        f64,
     specular:       f64,
@@ -15,7 +19,8 @@ pub struct Material {
 impl Default for Material {
     fn default() -> Self {
         Self {
-            colour: Colour::new(1.0, 1.0, 1.0),
+            colour:         Colour::new(1.0, 1.0, 1.0),
+            pattern:        None,
             ambient:        0.1,
             diffuse:        0.9,
             specular:       0.9,
@@ -26,9 +31,18 @@ impl Default for Material {
 }
 
 impl Material {
-    pub fn new(colour: Colour, ambient: f64, diffuse: f64, specular: f64, shininess: f64, reflectiveness: f64) -> Self {
+    pub fn new(
+        colour:         Colour, 
+        pattern:        Option<Arc<dyn Pattern>>,
+        ambient:        f64, 
+        diffuse:        f64, 
+        specular:       f64, 
+        shininess:      f64, 
+        reflectiveness: f64
+    ) -> Self {
         Self {
             colour,
+            pattern,
             ambient,
             diffuse,
             specular,
@@ -73,35 +87,5 @@ impl Material {
 
     pub fn reflectiveness(&self) -> f64 {
         self.reflectiveness
-    }
-
-    pub fn set_colour(mut self, colour: Colour) -> Self {
-        self.colour = colour;
-        self
-    }
-
-    pub fn set_ambient(mut self, ambient: f64) -> Self {
-        self.ambient = ambient;
-        self
-    }
-
-    pub fn set_diffuse(mut self, diffuse: f64) -> Self {
-        self.diffuse = diffuse;
-        self
-    }
-
-    pub fn set_specular(mut self, specular: f64) -> Self {
-        self.specular = specular;
-        self
-    }
-
-    pub fn set_shininess(mut self, shininess: f64) -> Self {
-        self.shininess = shininess;
-        self
-    }
-
-    pub fn set_reflectiveness(mut self, reflectiveness: f64) -> Self {
-        self.reflectiveness = reflectiveness;
-        self
     }
 }

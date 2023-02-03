@@ -4,7 +4,7 @@ use crate::object::{Object, Intersection};
 use crate::ray::Ray;
 use crate::light::Light;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Scene {
     pub objects: Vec<Box<dyn Object>>,
     pub lights:  Vec<Light>,
@@ -37,9 +37,10 @@ impl Scene {
         }
         
         // Background colour.
-        let unit_direction = ray.direction.normalize();
-        let t = 0.5 * (unit_direction.z + 1.0);
-        (1.0 - t) * Colour::new(1.0, 1.0, 1.0) + t * Colour::new(0.5, 0.7, 1.0)
+        BLACK
+        // let unit_direction = ray.direction.normalize();
+        // let t = 0.5 * (unit_direction.z + 1.0);
+        // (1.0 - t) * Colour::new(1.0, 1.0, 1.0) + t * Colour::new(0.5, 0.7, 1.0)
     }
 
     fn reflected_colour_at(&self, material: &Material, hit: &Intersection, depth: usize) -> Colour {

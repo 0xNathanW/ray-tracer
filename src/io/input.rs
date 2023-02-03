@@ -3,17 +3,8 @@ use std::fs::read;
 use std::path::Path;
 use std::sync::Arc;
 use anyhow::{Result, Context};
-use crate::{
-    Axis,
-    Point3,
-    Scene,
-    Object,
-    Material,
-    Camera,
-    Vec3, 
-    Colour,
-    light::Light,
-};
+use crate::*;
+use crate::pattern::*;
 use crate::object::{Sphere, Plane, Disk};
 
 #[derive(Deserialize, Debug)]
@@ -50,6 +41,8 @@ pub enum ObjectType {
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct MaterialInputs {
     colour: (f64, f64, f64),
+    #[serde(default)]
+    pattern: Option<PatternInputs>,
     #[serde(default = "ambient_default")]
     ambient: f64,
     #[serde(default = "diffuse_default")]
@@ -60,6 +53,22 @@ pub struct MaterialInputs {
     shininess: f64,
     #[serde(default = "reflectivity_default")]
     reflectivity: f64,
+}
+
+#[derive(Deserialize, PartialEq, Debug)]
+pub struct PatternInputs {
+    r#type: PatternType,
+    colour_a: (f64, f64, f64),
+    colour_b: (f64, f64, f64),
+    transform: Option<Vec<TransformationInput>>,
+}
+
+#[derive(Deserialize, PartialEq, Debug)]
+pub enum PatternType {
+    Stripes,
+    Gradient,
+    Rings,
+    Checkers,
 }
 
 #[allow(non_camel_case_types)]
@@ -99,12 +108,12 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
         let material = parse_material(obj.material);
         let mut object: Box<dyn Object> = match obj.r#type {
             ObjectType::Sphere => Box::new(Sphere::new(material)),
-            ObjectType::Plane => Box::new(Plane::new(material)),
-            ObjectType::Disk => Box::new(Disk::new(material)),
+            ObjectType::Plane  => Box::new(Plane::new(material)),
+            ObjectType::Disk   => Box::new(Disk::new(material)),
         };
 
         if let Some(transformations) = obj.transform {
-            parse_and_apply_transformations(&mut *object, transformations);
+            apply_object_transformations(&mut *object, transformations);
         }
         objects.push(object);
     });
@@ -114,9 +123,66 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
     Ok((Arc::new(Scene::new(objects, lights)), camera))
 }
 
+// Should be a better way to do this...
 fn parse_material(material: MaterialInputs) -> Arc<Material> {
+    
+    let pattern: Option<Arc<dyn Pattern>> = match material.pattern {
+        Some(pattern) => {
+            let pattern_out: Arc<dyn Pattern> = match pattern.r#type {
+
+                PatternType::Stripes => {
+                    let mut stripes = Stripes::new(
+                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+                    );
+                    if let Some(transformations) = pattern.transform {
+                        apply_pattern_transformations(&mut stripes, transformations);
+                    }
+                    Arc::new(stripes)
+                },
+
+                PatternType::Gradient => {
+                    let mut gradient = Gradient::new(
+                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+                    );
+                    if let Some(transformations) = pattern.transform {
+                        apply_pattern_transformations(&mut gradient, transformations);
+                    }
+                    Arc::new(gradient)
+                },
+
+                PatternType::Rings => {
+                    let mut rings = Rings::new(
+                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+                    );
+                    if let Some(transformations) = pattern.transform {
+                        apply_pattern_transformations(&mut rings, transformations);
+                    }
+                    Arc::new(rings)
+                },
+
+                PatternType::Checkers => {
+                    let mut checkers = Checkers::new(
+                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+                    );
+                    if let Some(transformations) = pattern.transform {
+                        apply_pattern_transformations(&mut checkers, transformations);
+                    }
+                    Arc::new(checkers)
+                },
+            };
+            Some(pattern_out)
+        },
+
+        None => None,
+    };
+
     Arc::new(Material::new(
         Colour::new(material.colour.0, material.colour.1, material.colour.2),
+        pattern,
         material.ambient,
         material.diffuse,
         material.specular,
@@ -125,7 +191,7 @@ fn parse_material(material: MaterialInputs) -> Arc<Material> {
     ))
 }
 
-fn parse_and_apply_transformations(obj: &mut dyn Object, transformations: Vec<TransformationInput>) {
+fn apply_object_transformations(obj: &mut dyn Object, transformations: Vec<TransformationInput>) {
     transformations.into_iter().for_each(|transformation| {
         match transformation {
             TransformationInput::Translate(x, y, z) => {
@@ -145,6 +211,32 @@ fn parse_and_apply_transformations(obj: &mut dyn Object, transformations: Vec<Tr
             },
             TransformationInput::Rotate_z(angle) => {
                 obj.rotate(Axis::Z, angle)
+            },
+        }
+    });
+}
+
+// When trait upcasting is stable, this can be removed, and the function above can be used instead.
+fn apply_pattern_transformations(pattern: &mut dyn Pattern, transformations: Vec<TransformationInput>) {
+    transformations.into_iter().for_each(|transformation| {
+        match transformation {
+            TransformationInput::Translate(x, y, z) => {
+                pattern.translate(x, y, z);
+            },
+            TransformationInput::Scale(x, y, z) => {
+                pattern.scale(x, y, z);
+            },
+            TransformationInput::Scale_uniform(s) => {
+                pattern.scale_uniform(s);
+            },
+            TransformationInput::Rotate_x(angle) => {
+                pattern.rotate(Axis::X, angle)
+            },
+            TransformationInput::Rotate_y(angle) => {
+                pattern.rotate(Axis::Y, angle)
+            },
+            TransformationInput::Rotate_z(angle) => {
+                pattern.rotate(Axis::Z, angle)
             },
         }
     });
@@ -200,6 +292,10 @@ mod tests {
                 - type: !Sphere
                   material:
                     colour: [1.0, 0.2, 1.0]
+                    pattern:
+                        type: !Gradient
+                        colour_a: [1.0, 0.0, 0.0]
+                        colour_b: [0.0, 0.0, 1.0]
                   transform:
                     - !Translate [0.0, 0.0, -1.0]
                     - !Scale [0.5, 0.5, 0.5]
@@ -222,6 +318,12 @@ mod tests {
         assert_eq!(a.objects[0].material, 
             MaterialInputs {
                 colour: (1.0, 0.2, 1.0),
+                pattern: Some(PatternInputs {
+                    r#type: PatternType::Gradient,
+                    colour_a: (1.0, 0.0, 0.0),
+                    colour_b: (0.0, 0.0, 1.0),
+                    transform: None,
+                }),
                 ambient: ambient_default(),
                 diffuse: diffuse_default(),
                 specular: specular_default(),
@@ -241,12 +343,13 @@ mod tests {
     #[test]
     fn test_input_from_file() {
 
-        let a: Inputs = serde_yaml::from_slice(&read("scenes/single_sphere.yaml").unwrap()).unwrap();
+        let a: Inputs = serde_yaml::from_slice(&read("scenes/sphere.yaml").unwrap()).unwrap();
         assert_eq!(a.camera.look_from, (0.0, 0.0, 2.0));
         assert_eq!(a.camera.look_at, (2.0, 2.0, 2.0));
         assert_eq!(a.objects[0].material, 
             MaterialInputs {
                 colour: (1.0, 0.2, 1.0),
+                pattern: None,
                 ambient: ambient_default(),
                 diffuse: diffuse_default(),
                 specular: specular_default(),
