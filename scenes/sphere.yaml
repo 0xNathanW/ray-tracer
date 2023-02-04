@@ -9,11 +9,14 @@ camera:
 objects:
   - type: !Sphere
     material:
-      colour: [1, 0.2, 1]
-      # pattern:
-        # type: !Rings
-        # colour_a: [1, 0, 1]
-        # colour_b: [0, 1, 0]
+      colour: [1.0, 0.0, 1.0]
+      pattern:
+        type: !Stripes
+        colour_a: [1, 0, 1]
+        colour_b: [0, 0, 1]
+        transform:
+          - !Scale_uniform 0.1
+          - !Rotate_z 90
 
     transform:
       - !Translate [30, 30, 2]

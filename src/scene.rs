@@ -35,7 +35,6 @@ impl Scene {
 
             let surface_colour = hit.material.light(&self.lights[0], &hit, in_shadow);
             let reflected_colour = self.reflected_colour_at(&hit.material, &hit, depth);
-            
             return surface_colour + reflected_colour;
         }
         

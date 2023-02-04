@@ -52,7 +52,6 @@ impl Material {
     }
 
     pub fn light(&self, light: &Light, hit: &Intersection, in_shadow: bool) -> Colour {
-
         let effective_colour = hit.colour * light.intensity;
         let ambient = effective_colour * self.ambient;
 

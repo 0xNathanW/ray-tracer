@@ -40,6 +40,7 @@ pub enum ObjectType {
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct MaterialInputs {
+    #[serde(default = "colour_default")]
     colour: (f64, f64, f64),
     #[serde(default)]
     pattern: Option<PatternInputs>,
@@ -249,6 +250,10 @@ fn parse_lights(lights: Vec<LightInputs>) -> Vec<Light> {
             Colour::new(light.colour.0, light.colour.1, light.colour.2),
         )
     }).collect()
+}
+
+fn colour_default() -> (f64, f64, f64) {
+    (1.0, 1.0, 1.0)
 }
 
 fn ambient_default() -> f64 {
