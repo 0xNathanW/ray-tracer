@@ -2,9 +2,8 @@ camera:
   look_from: [0, 0, 8]
   look_at: [30, 30, 0]
   vup: [0, 0, 1]
-  vfov: 30
+  vfov: 90
   aperture: 0
-  focus_dist: 10
 
 objects:
 

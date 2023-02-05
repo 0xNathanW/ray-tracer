@@ -26,7 +26,6 @@ pub fn render(
     );
     let pixels = (0..dimensions.1)
     .into_par_iter()
-    .rev()
     .map(|j| {
 
         let mut rng = rand::thread_rng();
@@ -35,10 +34,7 @@ pub fn render(
         for i in 0..dimensions.0 {
             let mut pixel_colour = Colour::default();
             for _ in 0..samples_per_pixel {
-                // Randomise the sample point within the pixel.
-                let u = (i as f64 + rand::random::<f64>()) / (dimensions.0 - 1) as f64;
-                let v = (j as f64 + rand::random::<f64>()) / (dimensions.1 - 1) as f64;
-                let ray = camera.get_ray(u, v, &mut rng);
+                let ray = camera.get_ray(i, j);
                 pixel_colour += scene.colour_at(&ray, max_depth as usize);
             }
             pixel_colour.gamma_correct(samples_per_pixel);

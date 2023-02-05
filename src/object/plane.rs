@@ -33,11 +33,11 @@ impl Object for Plane {
         t_max: f64
     ) -> Option<f64> {
         // Infinite solutions (div by 0).
-        if ray.direction.z.abs() < 1e-6 {
+        if ray.direction.y.abs() < 1e-6 {
             return None;
         }
         
-        let t = -ray.origin.z / ray.direction.z;
+        let t = -ray.origin.y / ray.direction.y;
         if t < t_min || t > t_max {
             None
         } else {
@@ -45,8 +45,9 @@ impl Object for Plane {
         }
     }
     
+    // Normal without transformation points upwards.
     fn normal_obj(&self, _point: &Point3) -> Vec3 {
-        Vec3::new(0.0, 0.0, 1.0)
+        Vec3::new(0.0, 1.0, 0.0)
     }
 
     fn material(&self) -> &Arc<Material> {
@@ -101,11 +102,11 @@ impl Object for Disk {
     ) -> Option<f64> {
 
         // Infinite solutions (div by 0).
-        if obj_ray.direction.z.abs() < 1e-6 {
+        if obj_ray.direction.y.abs() < 1e-6 {
             return None;
         }
         
-        let t = -obj_ray.origin.z / obj_ray.direction.z;
+        let t = -obj_ray.origin.y / obj_ray.direction.y;
         if t < t_min || t > t_max {
             return None;
         }
@@ -120,7 +121,7 @@ impl Object for Disk {
     }
 
     fn normal_obj(&self, _point: &Point3) -> Vec3 {
-        Vec3::new(0.0, 0.0, 1.0)
+        Vec3::new(0.0, 1.0, 0.0)
     }
 
     fn material(&self) -> &Arc<Material> {

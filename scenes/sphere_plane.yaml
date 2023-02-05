@@ -1,8 +1,8 @@
 camera: 
-  look_from: [0, 0, 10]
-  look_at: [40, 40, 5]
-  vup: [0, 0, 1]
-  vfov: 15
+  look_from: [0, 10, -30]
+  look_at: [0, 5, 20]
+  vup: [0, 1, 0]
+  vfov: 45
   aperture: 0
   focus_dist: 1
 
@@ -12,14 +12,15 @@ objects:
     material:
       colour: [1, 0.2, 1]
     transform:
-      - !Translate [50, 50, 4]
+      - !Translate [0, 4, 20]
       - !Scale_uniform 4
 
   - type: !Plane
     material:
       colour: [0, 1, 0]
+      specular: 0
 
 lights:
-  - position: [-10, 30, 20]
+  - position: [30, 25, -10]
     colour: [1, 1, 1]
 

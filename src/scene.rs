@@ -12,10 +12,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn new(objects: Vec<Box<dyn Object>>, lights: Vec<Light>) -> Self {
-        Self {
-            objects,
-            lights,
-        }
+        Self { objects, lights }
     }
 
     pub fn hit(&self, ray: &Ray) -> Vec<Intersection> {
@@ -62,6 +59,7 @@ impl Scene {
 
         let shadow_ray = Ray::new(*point, direction);
         let hits = self.hit(&shadow_ray);
+        
         if !hits.is_empty() {
             let hit = &hits[0];
             if hit.t < distance {

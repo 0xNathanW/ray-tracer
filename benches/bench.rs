@@ -1,21 +1,17 @@
 use criterion::{Criterion, criterion_main, criterion_group};
 use ray_tracer::{parse_scene, render, default_dims};
 
-fn bench_spheres(c: &mut Criterion) {
+fn bench_sphere(c: &mut Criterion) {
     let dimensions = default_dims();
-    let samples = 300;
-    let max_depth = 100;
-    let scene_path = "scenes/bench_spheres.yaml";
+    let samples = 10;
+    let max_depth = 0;
+    let scene_path = "scenes/sphere.yaml";
     let (scene, camera) = parse_scene(scene_path, dimensions).unwrap();
 
-    let mut group = c.benchmark_group("spheres");
-    group.sample_size(10);
-    group.bench_function("spheres", |b| b.iter(
-        || render(
-            scene.clone(), camera.clone(), dimensions, samples, max_depth
-        )));
-    group.finish();
+    c.bench_function("spheres", |b| b.iter(|| 
+        render(scene.clone(), camera.clone(), dimensions, samples, max_depth)
+    ));
 }
 
-criterion_group!(benches, bench_spheres);
+criterion_group!(benches, bench_sphere);
 criterion_main!(benches);

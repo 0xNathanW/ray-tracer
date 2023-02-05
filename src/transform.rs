@@ -11,6 +11,7 @@ pub trait Transformable {
     fn set_inverse(&mut self, inverse: Matrix4);
 
     fn rotate(&mut self, axis: Axis, angle: f64) {
+        let angle = angle.to_radians();
         let rotation = match axis {
             Axis::X => Rotation::from_axis_angle(&Vec3::x_axis(), angle),
             Axis::Y => Rotation::from_axis_angle(&Vec3::y_axis(), angle),

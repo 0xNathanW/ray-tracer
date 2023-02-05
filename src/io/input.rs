@@ -21,7 +21,6 @@ pub struct CameraInputs {
     vup:        (f64, f64, f64),
     vfov:       f64,
     aperture:   f64,
-    focus_dist: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -101,7 +100,6 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
         a.camera.vfov,
         dimensions,
         a.camera.aperture,
-        a.camera.focus_dist,
     );
 
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
@@ -316,7 +314,6 @@ mod tests {
         assert_eq!(a.camera.vup, (7.0, 8.0, 9.0));
         assert_eq!(a.camera.vfov, 90.0);
         assert_eq!(a.camera.aperture, 0.0);
-        assert_eq!(a.camera.focus_dist, 1.0);
 
         assert_eq!(a.objects.len(), 1);
         assert_eq!(a.objects[0].r#type, ObjectType::Sphere);

@@ -59,16 +59,21 @@ pub fn refract(incident: &Vec3, normal: &Vec3, refraction_ratio: f64) -> Vec3 {
 }
 
 #[cfg(test)]
-pub fn fuzzy_eq(a: &Vec3, b: &Vec3) -> bool {
+pub fn fuzzy_eq_vec(a: &Vec3, b: &Vec3) -> bool {
     let s = 0.0001;
     (a.x - b.x).abs() < s && (a.y - b.y).abs() < s && (a.z - b.z).abs() < s
+}
+
+#[cfg(test)]
+pub fn fuzzy_eq_f64(a: f64, b: f64) -> bool {
+    let s = 0.0001;
+    (a - b).abs() < s
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::math::fuzzy_eq;
 
     #[test]
     fn test_reflect() {
@@ -82,6 +87,6 @@ mod tests {
         let incident = Vec3::new(0.0, -1.0, 0.0);
         let normal = Vec3::new(2.0_f64.sqrt() / 2.0, 2.0_f64.sqrt() / 2.0, 0.0);
         let reflected = reflect(&incident, &normal);
-        assert!(fuzzy_eq(&reflected, &Vec3::new(1.0, 0.0, 0.0)));
+        assert!(fuzzy_eq_vec(&reflected, &Vec3::new(1.0, 0.0, 0.0)));
     }
 }
