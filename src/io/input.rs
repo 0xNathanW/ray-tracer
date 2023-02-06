@@ -16,10 +16,20 @@ pub struct Inputs {
 
 #[derive(Deserialize, Debug)]
 pub struct CameraInputs {
+
+    #[serde(default = "from_default")]
     look_from:  (f64, f64, f64),
+    
+    #[serde(default = "at_default")]
     look_at:    (f64, f64, f64),
+    
+    #[serde(default = "up_default")]
     vup:        (f64, f64, f64),
+    
+    #[serde(default = "vfov_default")]
     vfov:       f64,
+    
+    #[serde(default)]
     aperture:   f64,
 }
 
@@ -39,20 +49,33 @@ pub enum ObjectType {
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct MaterialInputs {
+    
     #[serde(default = "colour_default")]
     colour: (f64, f64, f64),
+    
     #[serde(default)]
     pattern: Option<PatternInputs>,
+    
     #[serde(default = "ambient_default")]
     ambient: f64,
+    
     #[serde(default = "diffuse_default")]
     diffuse: f64,
+    
     #[serde(default = "specular_default")]
     specular: f64,
+    
     #[serde(default = "shininess_default")]
     shininess: f64,
-    #[serde(default = "reflectivity_default")]
-    reflectivity: f64,
+    
+    #[serde(default)]
+    reflective: f64,
+
+    #[serde(default)]
+    transparency: f64,
+
+    #[serde(default = "refractive_default")]
+    refractive_index: f64,
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
@@ -123,7 +146,7 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
 }
 
 // Should be a better way to do this...
-fn parse_material(material: MaterialInputs) -> Arc<Material> {
+fn parse_material(material: MaterialInputs) -> Material {
     
     let pattern: Option<Arc<dyn Pattern>> = match material.pattern {
         Some(pattern) => {
@@ -179,15 +202,17 @@ fn parse_material(material: MaterialInputs) -> Arc<Material> {
         None => None,
     };
 
-    Arc::new(Material::new(
+    Material::new(
         Colour::new(material.colour.0, material.colour.1, material.colour.2),
         pattern,
         material.ambient,
         material.diffuse,
         material.specular,
         material.shininess,
-        material.reflectivity,
-    ))
+        material.reflective,
+        material.transparency,
+        material.refractive_index,
+    )
 }
 
 fn apply_object_transformations(obj: &mut dyn Object, transformations: Vec<TransformationInput>) {
@@ -270,8 +295,24 @@ fn shininess_default() -> f64 {
     200.0
 }
 
-fn reflectivity_default() -> f64 {
-    0.0
+fn refractive_default() -> f64 {
+    1.0
+}
+
+fn from_default() -> (f64, f64, f64) {
+    (0.0, 0.0, 0.0)
+}
+
+fn at_default() -> (f64, f64, f64) {
+    (0.0, 0.0, -1.0)
+}
+
+fn up_default() -> (f64, f64, f64) {
+    (0.0, 1.0, 0.0)
+}
+
+fn vfov_default() -> f64 {
+    90.0
 }
 
 #[cfg(test)]
@@ -330,7 +371,9 @@ mod tests {
                 diffuse: diffuse_default(),
                 specular: specular_default(),
                 shininess: shininess_default(),
-                reflectivity: reflectivity_default(),
+                reflective: 0.0,
+                transparency: 0.0,
+                refractive_index: refractive_default(),
             });
         assert_eq!(a.objects[0].transform, Some(vec![
             TransformationInput::Translate(0.0, 0.0, -1.0),
@@ -345,18 +388,28 @@ mod tests {
     #[test]
     fn test_input_from_file() {
 
-        let a: Inputs = serde_yaml::from_slice(&read("scenes/sphere.yaml").unwrap()).unwrap();
+        let a: Inputs = serde_yaml::from_slice(&read("scenes/test_input.yaml").unwrap()).unwrap();
         assert_eq!(a.camera.look_from, (0.0, 0.0, 2.0));
         assert_eq!(a.camera.look_at, (2.0, 2.0, 2.0));
         assert_eq!(a.objects[0].material, 
             MaterialInputs {
-                colour: (1.0, 0.2, 1.0),
-                pattern: None,
+                colour: (1.0, 0.0, 1.0),
+                pattern: Some(PatternInputs {
+                    r#type: PatternType::Stripes,
+                    colour_a: (1.0, 0.0, 1.0),
+                    colour_b: (0.0, 0.0, 1.0),
+                    transform: Some(vec![
+                        TransformationInput::Scale_uniform(0.1),
+                        TransformationInput::Rotate_z(90.0),
+                    ])
+                }),
                 ambient: ambient_default(),
                 diffuse: diffuse_default(),
                 specular: specular_default(),
                 shininess: shininess_default(),
-                reflectivity: reflectivity_default(),
+                reflective: 0.0,
+                transparency: 0.0,
+                refractive_index: refractive_default(),
         });
         assert_eq!(a.lights[0].position, (-10.0, 30.0, 20.0));
     }

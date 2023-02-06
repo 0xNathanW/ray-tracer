@@ -16,11 +16,11 @@ pub struct Plane {
 
 // Non-transformed plane has its origin at the world's origin and its normal is the y-axis.
 impl Plane {
-    pub fn new(material: Arc<Material>) -> Self {
+    pub fn new(material: Material) -> Self {
         Self {
             transform: Matrix4::identity(),
             inverse:   Matrix4::identity(),
-            material,
+            material: Arc::new(material),
         }
     }
 }
@@ -31,7 +31,7 @@ impl Object for Plane {
         ray: &Ray,
         t_min: f64, 
         t_max: f64
-    ) -> Option<f64> {
+    ) -> Option<Vec<f64>> {
         // Infinite solutions (div by 0).
         if ray.direction.y.abs() < 1e-6 {
             return None;
@@ -41,7 +41,7 @@ impl Object for Plane {
         if t < t_min || t > t_max {
             None
         } else {
-            Some(t)
+            Some(vec![t])
         }
     }
     
@@ -84,11 +84,11 @@ pub struct Disk{
 
 // A disk is a plane with a radius.
 impl Disk {
-    pub fn new(material: Arc<Material>) -> Self {
+    pub fn new(material: Material) -> Self {
         Self { 
             transform: Matrix4::identity(),
             inverse:   Matrix4::identity(),
-            material ,
+            material: Arc::new(material),
         }
     }
 }
@@ -99,7 +99,7 @@ impl Object for Disk {
         obj_ray: &Ray, 
         t_min: f64, 
         t_max: f64
-    ) -> Option<f64> {
+    ) -> Option<Vec<f64>> {
 
         // Infinite solutions (div by 0).
         if obj_ray.direction.y.abs() < 1e-6 {
@@ -116,7 +116,7 @@ impl Object for Disk {
         if distance > 1.0 {
             None
         } else {
-            Some(t)
+            Some(vec![t])
         }
     }
 

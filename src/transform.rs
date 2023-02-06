@@ -43,4 +43,16 @@ pub trait Transformable {
         self.scale(scale, scale, scale);
     }
 
+    fn shear(&mut self, xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) {
+        let shear = Matrix4::new(
+            1.0, xy, xz, 0.0,
+            yx, 1.0, yz, 0.0,
+            zx, zy, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        );
+        let inv = shear.try_inverse().expect("Shear matrix is not invertible.");
+
+        self.set_transform(self.transform() * shear);
+        self.set_inverse(inv * self.inverse());
+    }
 }

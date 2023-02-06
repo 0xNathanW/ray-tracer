@@ -13,11 +13,11 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(material: Arc<Material>) -> Self {
+    pub fn new(material: Material) -> Self {
         Self { 
             transform: Matrix4::identity(), 
             inverse:   Matrix4::identity(),            
-            material,
+            material: Arc::new(material),
         }
     }
 }
@@ -29,7 +29,7 @@ impl Object for Sphere {
         obj_ray: &Ray, 
         t_min: f64, 
         t_max: f64
-    ) -> Option<f64> {
+    ) -> Option<Vec<f64>> {
 
         let oc = obj_ray.origin - Point3::origin();
         // Equation to solve: t^2 * dot(B, B) + 2t * dot(B, A-C) + dot(A-C, A-C) - R^2 = 0
@@ -43,17 +43,18 @@ impl Object for Sphere {
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 { return None; }
 
-        let mut root = (-half_b - discriminant.sqrt()) / a;
-        if (root < t_min) || (root > t_max) {
-            // Try the other root.
-            root = (-half_b + discriminant.sqrt()) / a;
-            if (root < t_min) || (root > t_max) {
-                // Both roots are outside the range.
-                return None;
-            }
+        let close_root = (-half_b - discriminant.sqrt()) / a;
+        let far_root = (-half_b + discriminant.sqrt()) / a;
+
+        let mut t = vec![];
+        if close_root < t_max && close_root > t_min {
+            t.push(close_root);
+        }
+        if far_root < t_max && far_root > t_min {
+            t.push(far_root);
         }
 
-        Some(root)
+        if t.is_empty() { None } else { Some(t) }
     }
 
     fn normal_obj(&self, point: &Point3) -> Vec3 {

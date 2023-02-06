@@ -70,7 +70,6 @@ pub fn fuzzy_eq_f64(a: f64, b: f64) -> bool {
     (a - b).abs() < s
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

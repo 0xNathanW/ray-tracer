@@ -40,42 +40,44 @@ pub struct Intersection {
 pub trait Object: Transformable + Send + Sync + Debug {
 
     // Returns the point on ray at t if the ray hits the object.
-    fn hit_obj(&self, obj_ray: &Ray, t_min: f64, t_max: f64) -> Option<f64>;
+    fn hit_obj(&self, obj_ray: &Ray, t_min: f64, t_max: f64) -> Option<Vec<f64>>;
     
     fn normal_obj(&self, point: &Point3) -> Vec3;
     
     fn material(&self) -> &Arc<Material>;
 
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Vec<Intersection>> {
         
         let obj_ray = ray.transform(self.inverse()); // Convert ray to object space.
-        let t = self.hit_obj(&obj_ray, t_min, t_max);
+        let hits = self.hit_obj(&obj_ray, t_min, t_max);
         
-        if let Some(t) = t {
-            
-            let point = ray.at(t);
+        if let Some(hits) = hits {
+            let mut intersections = Vec::new();
 
-            let outward_normal = self.normal_at(&point);
-            let eye = -ray.direction;
-            let front_face = ray.direction.dot(&outward_normal) < 0.0;
-            let normal = if front_face { outward_normal } else { -outward_normal };
-            
-            let reflect = reflect(&ray.direction, &normal);
-            let over_point = point + normal * 0.0001;
-            let colour = self.material().colour_at(&point, self.inverse());
+            for t in hits {
 
-            Some(Intersection {
-                point,
-                normal,
-                material: self.material().clone(),
-                t,
-                front_face,
-                eye,
-                reflect,
-                over_point,
-                colour,
-            }) 
-
+                let point = ray.at(t);
+                let outward_normal = self.normal_at(&point);
+                let eye = -ray.direction;
+                let front_face = ray.direction.dot(&outward_normal) < 0.0;
+                let normal = if front_face { outward_normal } else { -outward_normal };
+                let reflect = reflect(&ray.direction, &normal);
+                let over_point = point + normal * 0.0001;
+                let colour = self.material().colour_at(&point, self.inverse());
+                
+                intersections.push(Intersection {
+                    point,
+                    normal,
+                    material: self.material().clone(),
+                    t,
+                    front_face,
+                    eye,
+                    reflect,
+                    over_point,
+                    colour,
+                });
+            }
+            Some(intersections)
         } else {
             None
         }
@@ -89,5 +91,25 @@ pub trait Object: Transformable + Send + Sync + Debug {
         world_normal.normalize()
     }
 
+
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::Plane;
+    use crate::math::*;
+
+    #[test]
+    fn test_hit() {
+
+        let plane = Plane::new(Material::default());
+        let ray = Ray::new(Point3::new(0.0, 1.0, -1.0), Vec3::new(0.0, -f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0));
+        let ints = plane.hit(&ray, 0.0, f64::INFINITY).unwrap();
+        let int = &ints[0];
+        assert_eq!(int.point, Point3::new(0.0, 0.0, 0.0));
+        assert_eq!(int.normal, Vec3::new(0.0, 1.0, 0.0));
+        assert!(fuzzy_eq_vec(&int.reflect, &Vec3::new(0.0, f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0)));
+    }
 
 }

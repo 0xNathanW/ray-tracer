@@ -1,5 +1,4 @@
 use anyhow::Context;
-use rand::prelude::*;
 use crate::transform::Transformable;
 use crate::{Point3, Vec3, Matrix4, Translation};
 use crate::ray::Ray;
@@ -161,7 +160,7 @@ mod tests {
         assert!(fuzzy_eq_vec(&ray2.direction, &Vec3::new(0.66519, 0.33259, -0.66851)));
 
         // Transformed camera.
-        camera.rotate(crate::Axis::Y, f64::to_radians(45.0));
+        camera.rotate(crate::Axis::Y, 45.0);
         camera.translate(0.0, -2.0, 5.0);
         let ray3 = camera.get_ray(100, 50);
         assert_eq!(ray3.origin, Point3::new(0.0, 2.0, -5.0));

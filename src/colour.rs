@@ -133,3 +133,9 @@ impl Sub<Colour> for Colour {
         }
     }
 }
+
+#[cfg(test)]
+pub fn fuzzy_eq_colour(a: Colour, b: Colour) -> bool {
+    use crate::math::fuzzy_eq_f64; 
+    fuzzy_eq_f64(a.r, b.r) && fuzzy_eq_f64(a.g, b.g) && fuzzy_eq_f64(a.b, b.b)
+}

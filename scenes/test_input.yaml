@@ -1,6 +1,10 @@
 camera:
-  look_from: [0, 5, -5]
-  look_at: [0, 0, 10]
+  look_from: [0, 0, 2]
+  look_at: [2, 2, 2]
+  vup: [0, 0, 1]
+  vfov: 15
+  aperture: 0
+  focus_dist: 1
 
 objects:
   - type: !Sphere
@@ -15,9 +19,9 @@ objects:
           - !Rotate_z 90
 
     transform:
-      - !Translate [0, 2, 10]
+      - !Translate [30, 30, 2]
       - !Scale_uniform 4
   
 lights:
-  - position: [10, 20, -5]
+  - position: [-10, 30, 20]
     colour: [1, 1, 1]
