@@ -9,13 +9,14 @@ pub mod material;
 pub mod light;
 pub mod render;
 pub mod pattern;
+mod intersection;
 mod transform;
 mod math;
 mod io;
 
 pub use colour::Colour;
 pub use material::Material;
-pub use object::{Object, Intersection};
+pub use object::Object;
 pub use scene::Scene;
 pub use camera::Camera;
 pub use io::{OutputFormat, write_to_file, parse_scene};

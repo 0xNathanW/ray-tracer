@@ -7,17 +7,19 @@ use crate::ray::Ray;
 
 #[derive(Debug)]
 pub struct Sphere {
-    transform: Matrix4,
-    inverse:   Matrix4,
-    material: Arc<Material>,
+    id:         usize,
+    transform:  Matrix4,
+    inverse:    Matrix4,
+    material:   Arc<Material>,
 }
 
 impl Sphere {
     pub fn new(material: Material) -> Self {
         Self { 
+            id:        0,
             transform: Matrix4::identity(), 
             inverse:   Matrix4::identity(),            
-            material: Arc::new(material),
+            material:  Arc::new(material),
         }
     }
 }
@@ -64,6 +66,14 @@ impl Object for Sphere {
     fn material(&self) -> &Arc<Material> {
         &self.material
     }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
+    }
 }
 
 impl Transformable for Sphere {
@@ -84,47 +94,3 @@ impl Transformable for Sphere {
         &self.inverse
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::material::Lambertian;
-//     use crate::colour::Colour;
-//     use crate::{Vec3, Axis};
-//     use crate::math::fuzzy_eq;
-
-//     #[test]
-//     fn test_sphere_new() {
-//         let material = Arc::new(Lambertian::new(Colour::new(0.0, 0.0, 0.0)));
-//         let sphere = Sphere::new(material);
-//         assert_eq!(sphere.transform, Matrix4::identity());
-//         assert_eq!(sphere.inverse, Matrix4::identity());
-//     }
-
-//     #[test]
-//     fn test_sphere_normal_obj() {
-//         let sphere = Sphere::new(Arc::new(Lambertian::new(Colour::new(0.0, 0.0, 0.0))));
-//         let normal = sphere.normal_obj(&Point3::new(1.0, 0.0, 0.0));
-//         assert_eq!(normal, Vec3::new(1.0, 0.0, 0.0));
-
-//         let normal = sphere.normal_obj(&Point3::new(0.0, 1.0, 0.0));
-//         assert_eq!(normal, Vec3::new(0.0, 1.0, 0.0));
-
-//         let normal = sphere.normal_obj(&Point3::new(0.0, 0.0, 1.0));
-//         assert_eq!(normal, Vec3::new(0.0, 0.0, 1.0));
-//     }
-
-//     #[test]
-//     fn test_sphere_normal() {
-//         let mut sphere = Sphere::new(Arc::new(Lambertian::new(Colour::new(0.0, 0.0, 0.0))));
-//         sphere.translate(0.0, 1.0, 0.0);
-//         let n = sphere.normal_at(&Point3::new(0.0, 1.70711, -0.70711));
-//         assert!(fuzzy_eq(&n, &Vec3::new(0.0, 0.70711, -0.70711)));
-    
-//         let mut sphere1 = Sphere::new(Arc::new(Lambertian::new(Colour::new(0.0, 0.0, 0.0))));
-//         sphere1.scale(1.0, 0.5, 1.0);
-//         sphere1.rotate(Axis::Z, std::f64::consts::PI / 5.0);
-//         let n = sphere1.normal_at(&Point3::new(0.0, 2.0_f64.sqrt() / 2.0, -2.0_f64.sqrt() / 2.0));
-//         assert!(fuzzy_eq(&n, &Vec3::new(0.0, 0.97014, -0.24254)));
-//     }
-// }

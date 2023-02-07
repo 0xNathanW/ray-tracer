@@ -4,8 +4,8 @@ use ray_tracer::{parse_scene, render, default_dims};
 fn bench_sphere(c: &mut Criterion) {
     let dimensions = default_dims();
     let samples = 10;
-    let max_depth = 0;
-    let scene_path = "scenes/sphere.yaml";
+    let max_depth = 10;
+    let scene_path = "scenes/bench.yaml";
     let (scene, camera) = parse_scene(scene_path, dimensions).unwrap();
 
     c.bench_function("spheres", |b| b.iter(|| 

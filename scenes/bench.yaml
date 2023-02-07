@@ -1,0 +1,35 @@
+camera: 
+  look_from: [0, 10, -30]
+  look_at: [0, 5, 20]
+  vup: [0, 1, 0]
+  vfov: 25
+  aperture: 0
+
+objects:
+
+  # Reflective ball
+  - type: !Sphere
+    material:
+      colour: [1, 0.2, 1]
+      reflective: 0.5
+      specular: 1
+      shininess: 300
+    transform:
+      - !Translate [0, 4, 30]
+      - !Scale_uniform 4
+
+  - type: !Plane
+    material:
+      colour: [0.5, 0.5, 0.5]
+      pattern:
+        type: !Checkers
+        colour_a: [0, 0, 0]
+        colour_b: [1, 1, 1]
+        transform:
+          - !Scale_uniform 4
+      specular: 0
+      reflective: 0.5
+
+lights:
+  - position: [30, 25, -10]
+    colour: [1, 1, 1]

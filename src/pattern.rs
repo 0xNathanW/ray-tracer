@@ -203,3 +203,47 @@ impl Transformable for Checkers {
         &self.inverse
     }
 }
+
+#[cfg(test)]
+#[derive(Debug)]
+pub struct MockPattern {
+    pub transform:          Matrix4,
+    pub inverse:            Matrix4,
+}
+
+#[cfg(test)]
+impl MockPattern {
+    pub fn new() -> Self {
+        Self {
+            transform:          Matrix4::identity(),
+            inverse:            Matrix4::identity(),
+        }
+    }
+}
+
+#[cfg(test)]
+impl Pattern for MockPattern {
+    fn colour_at_pattern(&self, point: &Point3) -> Colour {
+        Colour::new(point.x, point.y, point.z)
+    }
+}
+
+#[cfg(test)]
+impl Transformable for MockPattern {
+
+    fn set_transform(&mut self, transform: Matrix4) {
+        self.transform = transform;
+    }
+
+    fn set_inverse(&mut self, inverse: Matrix4) {
+        self.inverse = inverse;
+    }
+
+    fn transform(&self) -> &Matrix4 {
+        &self.transform
+    }
+
+    fn inverse(&self) -> &Matrix4 {
+        &self.inverse
+    }
+}

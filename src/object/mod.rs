@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
-use crate::{Vec3, Point3, Colour};
+use crate::{Vec3, Point3};
+use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::math::reflect;
@@ -14,27 +15,7 @@ pub use sphere::Sphere;
 pub use plane::{Plane, Disk};
 pub use bbox::{AxisAlignedBoundingBox, BoundingBox};
 
-#[derive(Debug, Default)]
-pub struct Intersection {
-    // The point at which the ray hit the object.
-    pub point: Point3,
-    // The normal of the object at the point of incidence.
-    pub normal: Vec3,
-    // Material will be shared between threads.
-    pub material: Arc<Material>,
-    // Hit only if t is t_min < t < t_max.
-    pub t: f64,
-    // True if the ray hit the front of the object.
-    pub front_face: bool,
-    // Direction to camera.
-    pub eye: Vec3,
-    // Reflection vector.
-    pub reflect: Vec3,
-    // Point slightly above the surface.
-    pub over_point: Point3,
-    // Colour of material/pattern.
-    pub colour: Colour,
-}
+
 
 // An object is something that can be hit by a ray.
 pub trait Object: Transformable + Send + Sync + Debug {
@@ -56,16 +37,21 @@ pub trait Object: Transformable + Send + Sync + Debug {
 
             for t in hits {
 
+                let obj_id = self.id();
                 let point = ray.at(t);
                 let outward_normal = self.normal_at(&point);
                 let eye = -ray.direction;
                 let front_face = ray.direction.dot(&outward_normal) < 0.0;
                 let normal = if front_face { outward_normal } else { -outward_normal };
                 let reflect = reflect(&ray.direction, &normal);
+                // TODO: See what happens if we change epsilon.
                 let over_point = point + normal * 0.0001;
+                let under_point = point - normal * 0.0001;
                 let colour = self.material().colour_at(&point, self.inverse());
-                
+
                 intersections.push(Intersection {
+                    id: 0,
+                    obj_id,
                     point,
                     normal,
                     material: self.material().clone(),
@@ -73,8 +59,12 @@ pub trait Object: Transformable + Send + Sync + Debug {
                     front_face,
                     eye,
                     reflect,
-                    over_point,
                     colour,
+                    over_point,
+                    under_point,
+                    exit_idx: 1.0,
+                    enter_idx: 1.0,
+                    reflectance: 0.0,
                 });
             }
             Some(intersections)
@@ -91,7 +81,10 @@ pub trait Object: Transformable + Send + Sync + Debug {
         world_normal.normalize()
     }
 
+    // Unique identifier for the object.
+    fn id(&self) -> usize;
 
+    fn set_id(&mut self, id: usize);
 }
 
 #[cfg(test)]

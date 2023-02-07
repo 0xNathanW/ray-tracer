@@ -24,16 +24,22 @@ pub fn render(
         .unwrap()
         .progress_chars("#>-")
     );
+    
     let pixels = (0..dimensions.1)
     .into_par_iter()
     .map(|j| {
 
+        let mut rng = if samples_per_pixel > 1 {
+            Some(rand::thread_rng())
+        } else {
+            None
+        };
         let scene = Arc::clone(&scene);
         let mut row = vec![0; 3 * dimensions.0 as usize];
         for i in 0..dimensions.0 {
             let mut pixel_colour = Colour::default();
             for _ in 0..samples_per_pixel {
-                let ray = camera.get_ray(i, j);
+                let ray = camera.get_ray(i, j, rng.as_mut());
                 pixel_colour += scene.colour_at(&ray, max_depth as usize);
             }
             pixel_colour.gamma_correct(samples_per_pixel);

@@ -1,4 +1,5 @@
 use anyhow::Context;
+use rand::{Rng, rngs::ThreadRng};
 use crate::transform::Transformable;
 use crate::{Point3, Vec3, Matrix4, Translation};
 use crate::ray::Ray;
@@ -47,10 +48,16 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(&self, x: u32, y: u32) -> Ray {
+    pub fn get_ray(&self, x: u32, y: u32, rng: Option<&mut ThreadRng>) -> Ray {
         
-        let offset_x = (x as f64 + 0.5) * self.pixel_size;
-        let offset_y = (y as f64 + 0.5) * self.pixel_size;
+        let (a, b) = if let Some(rng) = rng {
+            (rng.gen::<f64>(), rng.gen::<f64>())
+        } else {
+            (0.5, 0.5)
+        };
+
+        let offset_x = (x as f64 + a) * self.pixel_size;
+        let offset_y = (y as f64 + b) * self.pixel_size;
 
         let world_x = self.half_width - offset_x;
         let world_y = self.half_height - offset_y;
@@ -150,19 +157,19 @@ mod tests {
         );
 
         // Center of canvas.
-        let ray1 = camera.get_ray(100, 50);
+        let ray1 = camera.get_ray(100, 50, None);
         assert_eq!(ray1.origin, Point3::new(0.0, 0.0, 0.0));
         assert!(fuzzy_eq_vec(&ray1.direction, &Vec3::new(0.0, 0.0, -1.0)));
 
         // Corner of canvas.
-        let ray2 = camera.get_ray(0, 0);
+        let ray2 = camera.get_ray(0, 0, None);
         assert_eq!(ray2.origin, Point3::origin());
         assert!(fuzzy_eq_vec(&ray2.direction, &Vec3::new(0.66519, 0.33259, -0.66851)));
 
         // Transformed camera.
         camera.rotate(crate::Axis::Y, 45.0);
         camera.translate(0.0, -2.0, 5.0);
-        let ray3 = camera.get_ray(100, 50);
+        let ray3 = camera.get_ray(100, 50, None);
         assert_eq!(ray3.origin, Point3::new(0.0, 2.0, -5.0));
         assert!(fuzzy_eq_vec(&ray3.direction, &Vec3::new(2.0_f64.sqrt() / 2.0, 0.0, -2.0_f64.sqrt() / 2.0)));
     }

@@ -2,35 +2,70 @@ camera:
   look_from: [0, 10, -30]
   look_at: [0, 5, 20]
   vup: [0, 1, 0]
-  vfov: 45
+  vfov: 25
   aperture: 0
-  focus_dist: 1
 
 objects:
 
+  # Reflective ball
   - type: !Sphere
     material:
       colour: [1, 0.2, 1]
       reflective: 0.5
+      specular: 1
+      shininess: 300
     transform:
       - !Translate [0, 4, 30]
       - !Scale_uniform 4
 
+  # Default
   - type: !Sphere
     material:
       colour: [0.5, 1, 1]
-      reflective: 0.5
     transform:
-      - !Translate [7, 3, 30]
-      - !Scale_uniform 3
+      - !Translate [8, 4, 30]
+      - !Scale_uniform 4
+
+  # Glass 
+  - type: !Sphere
+    material:
+      specular: 0
+      diffuse: 0
+      ambient: 0
+      shininess: 0
+      reflect: 1
+      transparency: 1.0
+      refractive_index: 1.52
+    transform:
+      - !Translate [-8, 4, 30]
+      - !Scale_uniform 4
+
+  # # Glass inside glass
+  # - type: !Sphere
+  #   material:
+  #     specular: 0
+  #     diffuse: 0
+  #     ambient: 0
+  #     shininess: 0
+  #     reflect: 0
+  #     transparency: 1.0
+  #     refractive_index: 1.52
+  #   transform:
+  #     - !Translate [-8, 2, 30]
+  #     - !Scale_uniform 2
 
   - type: !Plane
     material:
       colour: [0.5, 0.5, 0.5]
+      pattern:
+        type: !Checkers
+        colour_a: [0, 0, 0]
+        colour_b: [1, 1, 1]
+        transform:
+          - !Scale_uniform 4
       specular: 0
       reflective: 0.5
       
-
 lights:
   - position: [30, 25, -10]
     colour: [1, 1, 1]

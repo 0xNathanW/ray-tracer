@@ -9,18 +9,20 @@ use crate::transform::Transformable;
 // We start by defining the point as the origin and the normal as the z-axis, then we can transform this to our liking.
 #[derive(Debug)]
 pub struct Plane {
+    id:        usize,
     transform: Matrix4,
     inverse:   Matrix4,
-    material: Arc<Material>,
+    material:  Arc<Material>,
 }
 
 // Non-transformed plane has its origin at the world's origin and its normal is the y-axis.
 impl Plane {
     pub fn new(material: Material) -> Self {
         Self {
+            id:        0,
             transform: Matrix4::identity(),
             inverse:   Matrix4::identity(),
-            material: Arc::new(material),
+            material:  Arc::new(material),
         }
     }
 }
@@ -53,6 +55,14 @@ impl Object for Plane {
     fn material(&self) -> &Arc<Material> {
         &self.material
     }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
+    }
 }
 
 impl Transformable for Plane {
@@ -77,18 +87,20 @@ impl Transformable for Plane {
 // A disk is a plane with a radius.
 #[derive(Debug)]
 pub struct Disk{
+    id:        usize,
     transform: Matrix4,
     inverse:   Matrix4,
-    material: Arc<Material>,
+    material:  Arc<Material>,
 }
 
 // A disk is a plane with a radius.
 impl Disk {
     pub fn new(material: Material) -> Self {
         Self { 
+            id:        0,
             transform: Matrix4::identity(),
             inverse:   Matrix4::identity(),
-            material: Arc::new(material),
+            material:  Arc::new(material),
         }
     }
 }
@@ -126,6 +138,14 @@ impl Object for Disk {
 
     fn material(&self) -> &Arc<Material> {
         &self.material
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
     }
 }
 
