@@ -116,9 +116,9 @@ mod tests {
        
         // Check axis.
         // x + 
-        // let ray = Ray::new(Point3::new(5.0, 0.5, 0.0), Vec3::new(-1.0, 0.0, 0.0));
-        // let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
-        // assert_eq!(hit, Some(vec![4.0, 6.0]));
+        let ray = Ray::new(Point3::new(5.0, 0.5, 0.0), Vec3::new(-1.0, 0.0, 0.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![4.0, 6.0]));
 
         // x -
         let ray = Ray::new(Point3::new(-5.0, 0.5, 0.0), Vec3::new(1.0, 0.0, 0.0));
