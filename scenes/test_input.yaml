@@ -4,11 +4,10 @@ camera:
   vup: [0, 0, 1]
   vfov: 15
   aperture: 0
-  focus_dist: 1
 
 objects:
   - type: !Sphere
-    material:
+    material: !Plastic
       colour: [1.0, 0.0, 1.0]
       pattern:
         type: !Stripes
@@ -21,6 +20,15 @@ objects:
     transform:
       - !Translate [30, 30, 2]
       - !Scale_uniform 4
+  
+  - type: !Cone
+    material: !Glass
+    transform:
+      - !Rotate_x 45
+
+  - type: !Box
+    material: !Metal
+      colour: [1, 0.5, 1]
   
 lights:
   - position: [-10, 30, 20]

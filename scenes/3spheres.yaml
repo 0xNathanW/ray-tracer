@@ -21,7 +21,9 @@ objects:
   # Default
   - type: !Sphere
     material:
-      colour: [0.5, 1, 1]
+      colour: [0, 1, 0]
+      diffuse: 1
+      specular: 0
     transform:
       - !Translate [8, 4, 30]
       - !Scale_uniform 4
@@ -34,38 +36,41 @@ objects:
       ambient: 0
       shininess: 0
       reflect: 1
-      transparency: 1.0
+      transparency: 1
       refractive_index: 1.52
     transform:
       - !Translate [-8, 4, 30]
       - !Scale_uniform 4
 
-  # # Glass inside glass
-  # - type: !Sphere
-  #   material:
-  #     specular: 0
-  #     diffuse: 0
-  #     ambient: 0
-  #     shininess: 0
-  #     reflect: 0
-  #     transparency: 1.0
-  #     refractive_index: 1.52
-  #   transform:
-  #     - !Translate [-8, 2, 30]
-  #     - !Scale_uniform 2
-
-  - type: !Plane
+  # Glass inside glass
+  - type: !Sphere
     material:
-      colour: [0.5, 0.5, 0.5]
-      pattern:
-        type: !Checkers
-        colour_a: [0, 0, 0]
-        colour_b: [1, 1, 1]
-        transform:
-          - !Scale_uniform 4
+      specular: 0
+      diffuse: 0
+      ambient: 0
+      shininess: 0
+      reflect: 1
+      transparency: 1
+      refractive_index: 1.52
+    transform:
+      - !Translate [-8, 4, 30]
+      - !Scale_uniform 2
+
+  - type: !Sphere
+    material:
       specular: 0
       reflective: 0.5
-      
+      pattern:
+        type: !Checkers
+        colour_a: [1, 1, 1]
+        colour_b: [0, 0, 0]
+        transform:
+          - !Scale_uniform 0.005
+          - !Translate [15, 20, 0]
+    transform:
+      - !Translate [0, -1000, 0]
+      - !Scale_uniform 1000
+
 lights:
   - position: [30, 25, -10]
     colour: [1, 1, 1]

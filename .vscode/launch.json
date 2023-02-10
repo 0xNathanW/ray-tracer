@@ -31,7 +31,7 @@
                 "args": [
                     "build",
                     "--bin=ray-tracer",
-                    "--package=ray-tracer"
+                    "--package=ray-tracer",
                 ],
                 "filter": {
                     "name": "ray-tracer",

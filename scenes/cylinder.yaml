@@ -1,0 +1,10 @@
+camera:
+  look_from: [0, 5, -5]
+  look_at: [0, 0, 10]
+
+objects:
+  - type:
+
+lights:
+  - position: [10, 20, -5]
+    colour: [1, 1, 1]

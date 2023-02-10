@@ -1,17 +1,23 @@
 use serde::Deserialize;
-use std::fs::read;
-use std::path::Path;
-use std::sync::Arc;
+use std::{fs::read, path::Path, sync::Arc};
 use anyhow::{Result, Context};
 use crate::*;
 use crate::pattern::*;
-use crate::object::{Sphere, Plane, Disk};
+use crate::object::{Sphere, Plane, Disk, AxisAlignedBoundingBox, Cone, Cylinder};
 
 #[derive(Deserialize, Debug)]
 pub struct Inputs {
+    
+    #[serde(default = "camera_default")]
     camera:  CameraInputs,
+    
     objects: Vec<ObjectInputs>,
+    
+    #[serde(default = "lights_default")]
     lights:  Vec<LightInputs>,
+
+    #[serde(default = "background_default")]
+    background: (f64, f64, f64),
 }
 
 #[derive(Deserialize, Debug)]
@@ -36,6 +42,7 @@ pub struct CameraInputs {
 #[derive(Deserialize, Debug)]
 pub struct ObjectInputs {
     r#type:    ObjectType,
+    #[serde(default = "material_default")]
     material:  MaterialInputs,
     transform: Option<Vec<TransformationInput>>,
 }
@@ -45,10 +52,41 @@ pub enum ObjectType {
     Sphere,
     Plane,
     Disk,
+    Box,
+    Cylinder {
+        #[serde(default = "min_default")]
+        min: f64,
+        #[serde(default = "max_default")]
+        max: f64,
+        #[serde(default)]
+        closed: bool,
+    },
+    Cone {
+        #[serde(default = "min_default")]
+        min: f64,
+        #[serde(default = "max_default")]
+        max: f64,
+        #[serde(default)]
+        closed: bool,
+    },
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
-pub struct MaterialInputs {
+pub enum MaterialInputs {
+    Glass,
+    Metal {
+        colour: (f64, f64, f64),
+        pattern: Option<PatternInputs>,
+    },
+    Plastic {
+        colour: (f64, f64, f64),
+        pattern: Option<PatternInputs>,
+    },
+    Custom(CustomInputs),
+}
+
+#[derive(Deserialize, PartialEq, Debug)]
+pub struct CustomInputs {
     
     #[serde(default = "colour_default")]
     colour: (f64, f64, f64),
@@ -105,7 +143,7 @@ pub enum TransformationInput {
     Rotate_z(f64),
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 struct LightInputs {
     position: (f64, f64, f64),
     colour:   (f64, f64, f64),
@@ -127,11 +165,17 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
 
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
     a.objects.into_iter().for_each(|obj| {
+        
         let material = parse_material(obj.material);
         let mut object: Box<dyn Object> = match obj.r#type {
+            
             ObjectType::Sphere => Box::new(Sphere::new(material)),
             ObjectType::Plane  => Box::new(Plane::new(material)),
             ObjectType::Disk   => Box::new(Disk::new(material)),
+            ObjectType::Box    => Box::new(AxisAlignedBoundingBox::new(material)),
+
+            ObjectType::Cylinder { min, max, closed } => Box::new(Cylinder::new(material, min, max, closed)),
+            ObjectType::Cone { min, max, closed }     => Box::new(Cone::new(material, min, max, closed)),
         };
 
         if let Some(transformations) = obj.transform {
@@ -141,70 +185,28 @@ pub fn parse_scene<P: AsRef<Path>>(path: P, dimensions: (u32, u32)) -> Result<(A
     });
 
     let lights = parse_lights(a.lights);
+    let background = Colour::new(a.background.0, a.background.1, a.background.2);
+    Ok((Arc::new(Scene::new(objects, lights, background)), camera))
+}
 
-    Ok((Arc::new(Scene::new(objects, lights)), camera))
+fn parse_material(material: MaterialInputs) -> Material {
+    match material {
+        MaterialInputs::Glass => Material::glass(),
+        MaterialInputs::Metal { colour, pattern } => {
+            Material::metal(Colour::new(colour.0, colour.1, colour.1), pattern.map(parse_pattern))
+        }
+        MaterialInputs::Plastic { colour, pattern } => {
+            Material::plastic(Colour::new(colour.0, colour.1, colour.1), pattern.map(parse_pattern))
+        }
+        MaterialInputs::Custom(custom) => parse_custom(custom),
+    }
 }
 
 // Should be a better way to do this...
-fn parse_material(material: MaterialInputs) -> Material {
-    
-    let pattern: Option<Arc<dyn Pattern>> = match material.pattern {
-        Some(pattern) => {
-            let pattern_out: Arc<dyn Pattern> = match pattern.r#type {
-
-                PatternType::Stripes => {
-                    let mut stripes = Stripes::new(
-                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
-                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
-                    );
-                    if let Some(transformations) = pattern.transform {
-                        apply_pattern_transformations(&mut stripes, transformations);
-                    }
-                    Arc::new(stripes)
-                },
-
-                PatternType::Gradient => {
-                    let mut gradient = Gradient::new(
-                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
-                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
-                    );
-                    if let Some(transformations) = pattern.transform {
-                        apply_pattern_transformations(&mut gradient, transformations);
-                    }
-                    Arc::new(gradient)
-                },
-
-                PatternType::Rings => {
-                    let mut rings = Rings::new(
-                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
-                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
-                    );
-                    if let Some(transformations) = pattern.transform {
-                        apply_pattern_transformations(&mut rings, transformations);
-                    }
-                    Arc::new(rings)
-                },
-
-                PatternType::Checkers => {
-                    let mut checkers = Checkers::new(
-                        Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
-                        Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
-                    );
-                    if let Some(transformations) = pattern.transform {
-                        apply_pattern_transformations(&mut checkers, transformations);
-                    }
-                    Arc::new(checkers)
-                },
-            };
-            Some(pattern_out)
-        },
-
-        None => None,
-    };
-
+fn parse_custom(material: CustomInputs) -> Material {
     Material::new(
         Colour::new(material.colour.0, material.colour.1, material.colour.2),
-        pattern,
+        material.pattern.map(parse_pattern),
         material.ambient,
         material.diffuse,
         material.specular,
@@ -213,6 +215,53 @@ fn parse_material(material: MaterialInputs) -> Material {
         material.transparency,
         material.refractive_index,
     )
+}
+
+fn parse_pattern(pattern: PatternInputs) -> Arc<dyn Pattern> {
+
+    let pattern_out: Arc<dyn Pattern> = match pattern.r#type {
+        PatternType::Stripes => {
+            let mut stripes = Stripes::new(
+                Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+            );
+            if let Some(transformations) = pattern.transform {
+                apply_pattern_transformations(&mut stripes, transformations);
+            }
+            Arc::new(stripes)
+        }
+        PatternType::Gradient => {
+            let mut gradient = Gradient::new(
+                Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+            );
+            if let Some(transformations) = pattern.transform {
+                apply_pattern_transformations(&mut gradient, transformations);
+            }
+            Arc::new(gradient)
+        }
+        PatternType::Rings => {
+            let mut rings = Rings::new(
+                Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+            );
+            if let Some(transformations) = pattern.transform {
+                apply_pattern_transformations(&mut rings, transformations);
+            }
+            Arc::new(rings)
+        }
+        PatternType::Checkers => {
+            let mut checkers = Checkers::new(
+                Colour::new(pattern.colour_a.0, pattern.colour_a.1, pattern.colour_a.2),
+                Colour::new(pattern.colour_b.0, pattern.colour_b.1, pattern.colour_b.2),
+            );
+            if let Some(transformations) = pattern.transform {
+                apply_pattern_transformations(&mut checkers, transformations);
+            }
+            Arc::new(checkers)
+        },
+    };
+    pattern_out
 }
 
 fn apply_object_transformations(obj: &mut dyn Object, transformations: Vec<TransformationInput>) {
@@ -240,7 +289,7 @@ fn apply_object_transformations(obj: &mut dyn Object, transformations: Vec<Trans
     });
 }
 
-// When trait upcasting is stable, this can be removed, and the function above can be used instead.
+// When trait upcasting is stable, this can be removed, and the function above can be us`ed instead.
 fn apply_pattern_transformations(pattern: &mut dyn Pattern, transformations: Vec<TransformationInput>) {
     transformations.into_iter().for_each(|transformation| {
         match transformation {
@@ -277,6 +326,51 @@ fn parse_lights(lights: Vec<LightInputs>) -> Vec<Light> {
 
 fn colour_default() -> (f64, f64, f64) {
     (1.0, 1.0, 1.0)
+}
+
+fn background_default() -> (f64, f64, f64) {
+    (0.0, 0.0, 0.0)
+}
+
+fn camera_default() -> CameraInputs {
+    CameraInputs {
+        look_from: (0.0, 5.0, 0.0),
+        look_at: (0.0, 0.0, 5.0),
+        vup: (0.0, 1.0, 0.0),
+        vfov: 90.0,
+        aperture: 0.0,
+    }
+}
+
+fn lights_default() -> Vec<LightInputs> {
+    vec![
+        LightInputs {
+            position: (-10.0, 10.0, -10.0),
+            colour: (1.0, 1.0, 1.0),
+        }
+    ]
+}
+
+fn min_default() -> f64 {
+    -f64::INFINITY
+}
+
+fn max_default() -> f64 {
+    f64::INFINITY
+}
+
+fn material_default() -> MaterialInputs {
+    MaterialInputs::Custom(CustomInputs {
+        colour: colour_default(),
+        pattern: None,
+        ambient: ambient_default(),
+        diffuse: diffuse_default(),
+        specular: specular_default(),
+        shininess: shininess_default(),
+        reflective: 0.0,
+        transparency: 0.0,
+        refractive_index: refractive_default(),
+    })
 }
 
 fn ambient_default() -> f64 {
@@ -334,12 +428,16 @@ mod tests {
 
             objects:
                 - type: !Sphere
-                  material:
-                    colour: [1.0, 0.2, 1.0]
-                    pattern:
-                        type: !Gradient
-                        colour_a: [1.0, 0.0, 0.0]
-                        colour_b: [0.0, 0.0, 1.0]
+                  material: !Custom
+                    colour: [1.0, 0.0, 0.0]
+                    ambient: 0.1
+                    diffuse: 0.9
+                    specular: 0.9
+                    shininess: 200.0
+                    reflective: 0.0
+                    transparency: 0.0
+                    refractive_index: 1.0
+
                   transform:
                     - !Translate [0.0, 0.0, -1.0]
                     - !Scale [0.5, 0.5, 0.5]
@@ -359,14 +457,9 @@ mod tests {
         assert_eq!(a.objects.len(), 1);
         assert_eq!(a.objects[0].r#type, ObjectType::Sphere);
         assert_eq!(a.objects[0].material, 
-            MaterialInputs {
-                colour: (1.0, 0.2, 1.0),
-                pattern: Some(PatternInputs {
-                    r#type: PatternType::Gradient,
-                    colour_a: (1.0, 0.0, 0.0),
-                    colour_b: (0.0, 0.0, 1.0),
-                    transform: None,
-                }),
+            MaterialInputs::Custom(CustomInputs {
+                colour: (1.0, 0.0, 0.0),
+                pattern: None,
                 ambient: ambient_default(),
                 diffuse: diffuse_default(),
                 specular: specular_default(),
@@ -374,7 +467,7 @@ mod tests {
                 reflective: 0.0,
                 transparency: 0.0,
                 refractive_index: refractive_default(),
-            });
+            }));
         assert_eq!(a.objects[0].transform, Some(vec![
             TransformationInput::Translate(0.0, 0.0, -1.0),
             TransformationInput::Scale(0.5, 0.5, 0.5),
@@ -387,30 +480,52 @@ mod tests {
 
     #[test]
     fn test_input_from_file() {
-
         let a: Inputs = serde_yaml::from_slice(&read("scenes/test_input.yaml").unwrap()).unwrap();
+        
         assert_eq!(a.camera.look_from, (0.0, 0.0, 2.0));
-        assert_eq!(a.camera.look_at, (2.0, 2.0, 2.0));
-        assert_eq!(a.objects[0].material, 
-            MaterialInputs {
-                colour: (1.0, 0.0, 1.0),
-                pattern: Some(PatternInputs {
+        assert_eq!(a.camera.vfov, 15.0);
+
+        let sphere = &a.objects[0];
+        assert_eq!(sphere.r#type, ObjectType::Sphere);
+        assert_eq!(sphere.material, MaterialInputs::Plastic {
+            colour: (1.0, 0.0, 1.0),
+            pattern: Some(
+                PatternInputs {
                     r#type: PatternType::Stripes,
                     colour_a: (1.0, 0.0, 1.0),
                     colour_b: (0.0, 0.0, 1.0),
                     transform: Some(vec![
                         TransformationInput::Scale_uniform(0.1),
-                        TransformationInput::Rotate_z(90.0),
-                    ])
-                }),
-                ambient: ambient_default(),
-                diffuse: diffuse_default(),
-                specular: specular_default(),
-                shininess: shininess_default(),
-                reflective: 0.0,
-                transparency: 0.0,
-                refractive_index: refractive_default(),
+                        TransformationInput::Rotate_z(90.0)
+                    ]),
+                }
+            )
         });
-        assert_eq!(a.lights[0].position, (-10.0, 30.0, 20.0));
+        assert_eq!(sphere.transform, Some(vec![
+            TransformationInput::Translate(30.0, 30.0, 2.0),
+            TransformationInput::Scale_uniform(4.0),
+        ]));
+
+        let cone = &a.objects[1];
+        assert_eq!(cone.r#type, ObjectType::Cone {
+            min: -f64::INFINITY,
+            max: f64::INFINITY,
+            closed: false,
+        });
+        assert_eq!(cone.material, MaterialInputs::Glass);
+        assert_eq!(cone.transform, Some(vec![TransformationInput::Rotate_x(45.0)]));
+
+        let boxx = &a.objects[2];
+        assert_eq!(boxx.r#type, ObjectType::Box);
+        assert_eq!(boxx.material, MaterialInputs::Metal {
+            colour: (1.0, 0.5, 1.0),
+            pattern: None,
+        });
+
+        let lights = &a.lights;
+        assert_eq!(lights[0], LightInputs {
+            position: (-10.0, 30.0, 20.0),
+            colour: (1.0, 1.0, 1.0),
+        });
     }
 }

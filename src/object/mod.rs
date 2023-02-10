@@ -1,22 +1,24 @@
 use std::fmt::Debug;
 use std::sync::Arc;
-use crate::{Vec3, Point3};
+use crate::{Vec3, Point3, Material};
 use crate::intersection::Intersection;
-use crate::material::Material;
 use crate::ray::Ray;
 use crate::math::reflect;
 use crate::transform::Transformable;
 
 mod sphere;
 mod plane;
+mod cylinder;
+mod cone;
 mod bbox;
 
 pub use sphere::Sphere;
 pub use plane::{Plane, Disk};
-pub use bbox::{AxisAlignedBoundingBox, BoundingBox};
+pub use bbox::AxisAlignedBoundingBox;
+pub use cylinder::Cylinder;
+pub use cone::Cone;
 
-
-
+// TODO: Change id to uuid.
 // An object is something that can be hit by a ray.
 pub trait Object: Transformable + Send + Sync + Debug {
 
@@ -64,7 +66,6 @@ pub trait Object: Transformable + Send + Sync + Debug {
                     under_point,
                     exit_idx: 1.0,
                     enter_idx: 1.0,
-                    reflectance: 0.0,
                 });
             }
             Some(intersections)

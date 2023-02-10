@@ -9,18 +9,19 @@ use crate::light::Light;
 pub struct Scene {
     pub objects:    Vec<Box<dyn Object>>,
     pub lights:     Vec<Light>,
+    pub background: Colour,
     pub id_counter: usize,
 }
 
 impl Scene {
 
-    pub fn new(mut objects: Vec<Box<dyn Object>>, lights: Vec<Light>) -> Self {
+    pub fn new(mut objects: Vec<Box<dyn Object>>, lights: Vec<Light>, bg: Colour) -> Self {
         let mut id_counter = 0;
         for obj in &mut objects {
             obj.set_id(id_counter);
             id_counter += 1;
         }
-        Self { objects, lights, id_counter }
+        Self { objects, lights, id_counter, background: bg }
     }
 
     pub fn push(&mut self, mut object: Box<dyn Object>) {
@@ -44,7 +45,7 @@ impl Scene {
 
         let mut hits = self.hit(&ray, -0.0001, f64::INFINITY);
         compute_intersections(&mut hits);
-    
+        // TODO: doesnt need to be an iterator.
         for hit in hits {
 
             let in_shadow = self.is_shadowed(&hit.over_point);
@@ -52,29 +53,24 @@ impl Scene {
             let surface_colour = hit.material.light(&self.lights[0], &hit, in_shadow);
             let reflected_colour = self.reflected_colour_at(&hit.material, &hit, depth);
             let refracted_colour = self.refracted_colour_at(&hit.material, &hit, depth);
-            
+
             if hit.material.reflect > 0.0 && hit.material.transparency > 0.0 {
-                let reflectance = hit.reflectance;
+                let reflectance = hit.schlick();
                 return surface_colour + reflected_colour * reflectance + refracted_colour * (1.0 - reflectance);
             } else {
                 return surface_colour + reflected_colour + refracted_colour;
             }
         }
         
-        // Background colour blue gradient.
-        BLACK
-        // let unit_direction = ray.direction.normalize();
-        // let t = 0.5 * (unit_direction.y + 1.0);
-        // Colour::new(1.0, 1.0, 1.0) * (1.0 - t) + Colour::new(0.2, 0.4, 1.0) * t
+        self.background
     }
 
     fn reflected_colour_at(&self, material: &Material, hit: &Intersection, depth: usize) -> Colour {
         if depth == 0 || material.reflect == 0.0 {
             return BLACK;
         }
-
         let reflected = Ray::new(hit.over_point, hit.reflect);
-        self.colour_at(&reflected, depth - 1) * material.reflect
+        self.colour_at(&reflected, depth - 1) * material.reflect      
     }
 
     fn refracted_colour_at(&self, material: &Material, hit: &Intersection, depth: usize) -> Colour {

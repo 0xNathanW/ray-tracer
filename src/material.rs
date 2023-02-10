@@ -70,6 +70,48 @@ impl Material {
         }
     }
 
+    pub fn glass() -> Material {
+        Material {
+            colour:           Colour::new(1.0, 1.0, 1.0),
+            pattern:          None,
+            ambient:          0.0,
+            diffuse:          0.0,
+            specular:         0.0,
+            shininess:        00.0,
+            reflect:          0.0,
+            transparency:     1.0,
+            refractive_index: 1.52,
+        }
+    }
+
+    pub fn metal(colour: Colour, pattern: Option<Arc<dyn Pattern>>) -> Material {
+        Material {
+            colour,
+            pattern,
+            ambient:          0.0,
+            diffuse:          0.0,
+            specular:         1.0,
+            shininess:        200.0,
+            reflect:          1.0,
+            transparency:     0.0,
+            refractive_index: 1.0,
+        }
+    }
+
+    pub fn plastic(colour: Colour, pattern: Option<Arc<dyn Pattern>>) -> Material{
+        Material {
+            colour,
+            pattern,
+            ambient:          0.0,
+            diffuse:          0.5,
+            specular:         0.5,
+            shininess:        100.0,
+            reflect:          0.0,
+            transparency:     0.0,
+            refractive_index: 1.0,
+        }
+    }
+
     pub fn light(&self, light: &Light, hit: &Intersection, in_shadow: bool) -> Colour {
         let effective_colour = hit.colour * light.intensity;
         let ambient = effective_colour * self.ambient;

@@ -1,0 +1,41 @@
+camera:
+  look_from: [0, 8, -3]
+  look_at: [0, 0, 10]
+  vfov: 70
+
+objects:
+  - type: !Box
+    material: 
+      colour: [1, 0, 0]
+      reflective: 1.0
+    transform:
+      - !Translate [0, 1, 10]
+      - !Scale [5, 1, 5]
+
+  - type: !Plane
+    material:
+      pattern:
+        type: !Rings
+        colour_a: [1, 1, 1]
+        colour_b: [0, 0, 0]
+
+  - type: !Plane
+    material:
+      pattern:
+        type: !Rings
+        colour_a: [1, 1, 1]
+        colour_b: [0, 0, 0]
+    transform:
+      - !Rotate_z 90
+      - !Translate [10, 7, 5]
+  
+  - type: !Sphere
+    material:
+      colour: [0, 1, 1]
+    transform:
+      - !Translate [0, 5, 10]
+      - !Scale_uniform 2
+
+lights:
+  - position: [30, 25, -10]
+    colour: [1, 1, 1]

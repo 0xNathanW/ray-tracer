@@ -31,8 +31,24 @@ pub struct Intersection {
     pub exit_idx: f64,
     // Enter index of refraction.
     pub enter_idx: f64,
-    // What fraction of the light is reflected.
-    pub reflectance: f64,
+}
+
+impl Intersection {
+    pub fn schlick(&self) -> f64 {
+        let mut cos = self.eye.dot(&self.normal);
+        if self.exit_idx > self.enter_idx {
+            let n = self.exit_idx / self.enter_idx;
+            let sin2_t = n.powi(2) * (1.0 - cos.powi(2));
+
+            if sin2_t > 1.0 {
+                return 1.0;
+            }
+            let cos_t = (1.0 - sin2_t).sqrt();
+            cos = cos_t;
+        }
+        let r0 = ((self.enter_idx - self.exit_idx) / (self.enter_idx + self.exit_idx)).powi(2);
+        r0 + (1.0 - r0) * (1.0 - cos).powi(5)
+    }
 }
 
 pub fn compute_intersections(hits: &mut Vec<Intersection>) {
@@ -91,29 +107,6 @@ pub fn compute_intersections(hits: &mut Vec<Intersection>) {
         .for_each(|(hit, (exit_idx, enter_idx))| {
             hit.exit_idx = *exit_idx;
             hit.enter_idx = *enter_idx;
-        });
-    
-    // Schlink's law.
-    hits.iter_mut()
-        .for_each(|hit| {
-            
-            let mut cos = hit.eye.dot(&hit.normal);
-            if hit.exit_idx > hit.enter_idx {
-
-                let n = hit.exit_idx / hit.enter_idx;
-                let sin2_t = n.powi(2) * (1.0 - cos.powi(2));
-                
-                if sin2_t > 1.0 {
-                    hit.reflectance = 1.0;
-                    return;
-                }
-
-                let cos_t = (1.0 - sin2_t).sqrt();
-                cos = cos_t;
-            }
-
-            let r0 = ((hit.enter_idx - hit.exit_idx) / (hit.enter_idx + hit.exit_idx)).powi(2);
-            hit.reflectance = r0 + (1.0 - r0) * (1.0 - cos).powi(5);
         });
 }
 
@@ -223,13 +216,13 @@ mod tests {
         let ray = Ray::new(Point3::origin(), Vec3::new(0.0, 0.99, -0.1));
         let mut hits = scene.hit(&ray, -f64::INFINITY, f64::INFINITY);
         compute_intersections(&mut hits);
-        assert!(fuzzy_eq_f64(hits[1].reflectance, 0.04));
+        assert!(fuzzy_eq_f64(hits[1].schlick(), 0.04));
 
         // n2 > n1
         let ray = Ray::new(Point3::new(0.0, 0.99, -2.0), Vec3::new(0.0, 0.0, 1.0));
         let mut hits = scene.hit(&ray, -f64::INFINITY, f64::INFINITY);
         compute_intersections(&mut hits);
-        assert!(fuzzy_eq_f64(hits[0].reflectance, 0.48873));
+        assert!(fuzzy_eq_f64(hits[0].schlick(), 0.48873));
     }
 
 }

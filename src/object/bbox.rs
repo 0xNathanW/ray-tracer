@@ -1,168 +1,184 @@
-use crate::{ray::Ray, Point3}; 
+use std::sync::Arc;
+use crate::{Material, Matrix4, Object, ray::Ray, transform::Transformable, Vec3, Point3};
 
-pub trait BoundingBox {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> bool;
-}
-
+#[derive(Debug)]
 pub struct AxisAlignedBoundingBox {
-    min: Point3,
-    max: Point3,
+    id:         usize,
+    transform:  Matrix4,
+    inverse:    Matrix4,
+    material:   Arc<Material>,
 }
 
 impl AxisAlignedBoundingBox {
-    pub fn new(min: Point3, max: Point3) -> AxisAlignedBoundingBox {
-        assert!(min < max);
-        AxisAlignedBoundingBox { min, max }
-    }
-
-    pub fn surrounding_box(box0: &AxisAlignedBoundingBox, box1: &AxisAlignedBoundingBox) -> AxisAlignedBoundingBox {
-        let small = Point3::new(
-            box0.min.x.min(box1.min.x),
-            box0.min.y.min(box1.min.y),
-            box0.min.z.min(box1.min.z),
-        );
-        let big = Point3::new(
-            box0.max.x.max(box1.max.x),
-            box0.max.y.max(box1.max.y),
-            box0.max.z.max(box1.max.z),
-        );
-        AxisAlignedBoundingBox::new(small, big)
-    }
-
-    pub fn surrounding_box_list(list: &[AxisAlignedBoundingBox]) -> AxisAlignedBoundingBox {
-        let mut small = Point3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY);
-        let mut big = Point3::new(-f64::INFINITY, -f64::INFINITY, -f64::INFINITY);
-        for box_ in list {
-            small = Point3::new(
-                small.x.min(box_.min.x),
-                small.y.min(box_.min.y),
-                small.z.min(box_.min.z),
-            );
-            big = Point3::new(
-                big.x.max(box_.max.x),
-                big.y.max(box_.max.y),
-                big.z.max(box_.max.z),
-            );
+    pub fn new(material: Material) -> Self {
+        Self {
+            id: 0,
+            transform: Matrix4::identity(),
+            inverse: Matrix4::identity(),
+            material: Arc::new(material),
         }
-        AxisAlignedBoundingBox::new(small, big)
     }
 
-    // Resize the bounding box to include the given point.
-    pub fn resize(&mut self, point: &Point3) {
-        self.min = Point3::new(
-            self.min.x.min(point.x),
-            self.min.y.min(point.y),
-            self.min.z.min(point.z),
-        );
-        self.max = Point3::new(
-            self.max.x.max(point.x),
-            self.max.y.max(point.y),
-            self.max.z.max(point.z),
-        );
-    }
+    fn check_axis(&self, origin: f64, direction: f64) -> (f64, f64) {
+        let tmin_numerator = -1.0 - origin;
+        let tmax_numerator = 1.0 - origin;
 
-    fn single_axis_hit(min: f64, max: f64, origin: f64, direction: f64) -> (f64, f64) {
-        let inv_direction = 1.0 / direction;
-    
-        let t0 = (min - origin) * inv_direction;
-        let t1 = (max - origin) * inv_direction;
-    
-        if inv_direction < 0.0 {
-            (t1, t0)
+        let (mut close, mut far) = if direction.abs() >= 0.0001 {
+            (tmin_numerator / direction, tmax_numerator / direction)
         } else {
-            (t0, t1)
+            (tmin_numerator * f64::INFINITY, tmax_numerator * f64::INFINITY)
+        };
+
+        if close > far {
+            std::mem::swap(&mut close, &mut far);
         }
+
+        (close, far)
     }
 }
 
-impl Default for AxisAlignedBoundingBox {
-    fn default() -> Self {
-        AxisAlignedBoundingBox {
-            min: Point3::new(-f64::INFINITY, -f64::INFINITY, -f64::INFINITY),
-            max: Point3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY),
+impl Object for AxisAlignedBoundingBox {
+    
+    fn hit_obj(&self, obj_ray: &Ray, t_min: f64, t_max: f64) -> Option<Vec<f64>> {
+        
+        let (tmin_x, tmax_x) = self.check_axis(obj_ray.origin.x, obj_ray.direction.x);
+        let (tmin_y, tmax_y) = self.check_axis(obj_ray.origin.y, obj_ray.direction.y);
+        let (tmin_z, tmax_z) = self.check_axis(obj_ray.origin.z, obj_ray.direction.z);
+
+        let close = tmin_x.max(tmin_y).max(tmin_z);
+        let far = tmax_x.min(tmax_y).min(tmax_z);
+
+        if close > far {
+            return None;
         }
+
+        let mut hits = vec![];
+        if close > t_min && close < t_max {
+            hits.push(close);
+        }
+        if far > t_min && far < t_max {
+            hits.push(far);
+        }
+        if hits.is_empty() { None } else { Some(hits) }
+    }
+
+    fn normal_obj(&self, point: &Point3) -> Vec3 {
+        let max_c = point.x.abs().max(point.y.abs()).max(point.z.abs());
+
+        // Direction of normal is the direction of the largest component.
+        if max_c == point.x.abs() {
+            Vec3::new(point.x, 0.0, 0.0)
+        } else if max_c == point.y.abs() {
+            Vec3::new(0.0, point.y, 0.0)
+        } else {
+            Vec3::new(0.0, 0.0, point.z)
+        }
+    }
+
+    fn material(&self) -> &Arc<Material> {
+        &self.material
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
     }
 }
 
-impl BoundingBox for AxisAlignedBoundingBox {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> bool {
+impl Transformable for AxisAlignedBoundingBox {
+    fn transform(&self) -> &Matrix4 {
+        &self.transform
+    }
 
-        let (t0, t1) = Self::single_axis_hit(self.min.x, self.max.x, ray.origin.x, ray.direction.x);
-        let t_min = t_min.max(t0);
-        let t_max = t_max.min(t1);
-        if t_max <= t_min {
-            return false;
-        }
+    fn inverse(&self) -> &Matrix4 {
+        &self.inverse
+    }
 
-        let (t0, t1) = Self::single_axis_hit(self.min.y, self.max.y, ray.origin.y, ray.direction.y);
-        let t_min = t_min.max(t0);
-        let t_max = t_max.min(t1);
-        if t_max <= t_min {
-            return false;
-        }
+    fn set_transform(&mut self, transform: Matrix4) {
+        self.transform = transform;
+    }
 
-        let (t0, t1) = Self::single_axis_hit(self.min.z, self.max.z, ray.origin.z, ray.direction.z);
-        let t_min = t_min.max(t0);
-        let t_max = t_max.min(t1);
-        if t_max <= t_min {
-            return false;
-        }
-
-        true    
+    fn set_inverse(&mut self, inverse: Matrix4) {
+        self.inverse = inverse;
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Vec3;
 
     #[test]
     fn test_bbox_hit() {
+        let bbox = AxisAlignedBoundingBox::new(Material::default());
+       
+        // Check axis.
+        // x + 
+        // let ray = Ray::new(Point3::new(5.0, 0.5, 0.0), Vec3::new(-1.0, 0.0, 0.0));
+        // let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        // assert_eq!(hit, Some(vec![4.0, 6.0]));
 
-        let bbox = AxisAlignedBoundingBox::new(Point3::new(1.0, 1.0, 1.0), Point3::new(2.0, 2.0, 2.0));
-        let mut ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0));
-        
-        assert!(bbox.hit(&ray, 0.0, f64::INFINITY));
-        
-        ray.direction = Vec3::new(-1.0, -1.0, -1.0);
-        assert!(!bbox.hit(&ray, 0.0, f64::INFINITY));
+        // x -
+        let ray = Ray::new(Point3::new(-5.0, 0.5, 0.0), Vec3::new(1.0, 0.0, 0.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![4.0, 6.0]));
 
-        ray.direction = Vec3::new(1.0, 0.0, 0.0);
-        assert!(!bbox.hit(&ray, 0.0, f64::INFINITY));
+        // y +
+        let ray = Ray::new(Point3::new(0.5, 5.0, 0.0), Vec3::new(0.0, -1.0, 0.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![4.0, 6.0]));
 
-        ray.direction = Vec3::new(0.0, 1.0, 0.0);
-        assert!(!bbox.hit(&ray, 0.0, f64::INFINITY));
+        // y -
+        let ray = Ray::new(Point3::new(0.5, -5.0, 0.0), Vec3::new(0.0, 1.0, 0.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![4.0, 6.0]));
 
-        ray.direction = Vec3::new(0.5, 0.5, 0.5);
-        assert!(bbox.hit(&ray, 0.0, f64::INFINITY));
+        // z +
+        let ray = Ray::new(Point3::new(0.5, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![4.0, 6.0]));
+
+        // z -
+        let ray = Ray::new(Point3::new(0.5, 0.0, -5.0), Vec3::new(0.0, 0.0, 1.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![4.0, 6.0]));
+
+        // Inside.
+        let ray = Ray::new(Point3::new(0.0, 0.5, 0.0), Vec3::new(0.0, 0.0, 1.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, Some(vec![-1.0, 1.0]));
     }
 
     #[test]
-    fn test_bbox_resize() {
-        let mut bbox = AxisAlignedBoundingBox::new(Point3::new(1.0, 1.0, 1.0), Point3::new(2.0, 2.0, 2.0));
-        bbox.resize(&Point3::new(0.0, 0.0, 0.0));
-        assert_eq!(bbox.min, Point3::new(0.0, 0.0, 0.0));
-        assert_eq!(bbox.max, Point3::new(2.0, 2.0, 2.0));
+    fn test_bbox_miss() {
+        let bbox = AxisAlignedBoundingBox::new(Material::default());
+
+        let ray = Ray::new(Point3::new(-2.0, 0.0, 0.0), Vec3::new(0.2673, 0.5345, 0.8018));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, None);
+
+        let ray = Ray::new(Point3::new(0.0, -2.0, 0.0), Vec3::new(0.8018, 0.2673, 0.5345));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, None);
+
+        let ray = Ray::new(Point3::new(2.0, 2.0, 0.0), Vec3::new(-1.0, 0.0, 0.0));
+        let hit = bbox.hit_obj(&ray, -f64::INFINITY, f64::INFINITY);
+        assert_eq!(hit, None);
     }
 
     #[test]
-    fn test_bbox_surrounding() {
-        let bbox0 = AxisAlignedBoundingBox::new(Point3::new(1.0, 1.0, 1.0), Point3::new(2.0, 2.0, 2.0));
-        let bbox1 = AxisAlignedBoundingBox::new(Point3::new(0.0, 0.0, 0.0), Point3::new(3.0, 3.0, 3.0));
-        let bbox2 = AxisAlignedBoundingBox::surrounding_box(&bbox0, &bbox1);
-        assert_eq!(bbox2.min, Point3::new(0.0, 0.0, 0.0));
-        assert_eq!(bbox2.max, Point3::new(3.0, 3.0, 3.0));
-    }
+    fn test_bbox_normal_obj() {
+        let bbox = AxisAlignedBoundingBox::new(Material::default());
 
-    #[test]
-    fn test_bbox_surrounding_list() {
-        let bbox0 = AxisAlignedBoundingBox::new(Point3::new(1.0, 1.0, 1.0), Point3::new(2.0, 2.0, 2.0));
-        let bbox1 = AxisAlignedBoundingBox::new(Point3::new(-2.0, -2.0, -2.0), Point3::new(3.0, 3.0, 3.0));
-        let bbox2 = AxisAlignedBoundingBox::new(Point3::new(0.0, 0.0, 0.0), Point3::new(4.0, 4.0, 4.0));
-        let bbox3 = AxisAlignedBoundingBox::surrounding_box_list(&vec![bbox0, bbox1, bbox2]);
-        assert_eq!(bbox3.min, Point3::new(-2.0, -2.0, -2.0));
-        assert_eq!(bbox3.max, Point3::new(4.0, 4.0, 4.0));  
-    }
+        let obj_norm = bbox.normal_obj(&Point3::new(1.0, 0.5, -0.8));
+        assert_eq!(obj_norm, Vec3::new(1.0, 0.0, 0.0));
 
+        let obj_norm = bbox.normal_obj(&Point3::new(-1.0, -0.2, 0.9));
+        assert_eq!(obj_norm, Vec3::new(-1.0, 0.0, 0.0));
+
+        let obj_norm = bbox.normal_obj(&Point3::new(0.4, 0.4, -1.0));
+        assert_eq!(obj_norm, Vec3::new(0.0, 0.0, -1.0));
+    }
 }

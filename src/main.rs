@@ -9,7 +9,7 @@ use ray_tracer::parse_scene;
 pub struct Args {
     #[clap(short, long)]
     #[clap(help = "Path to scene YAML file.")]
-    pub scene_path: String,
+    pub scene: String,
 
     #[clap(short, long)]
     #[clap(value_enum, default_value_t)]
@@ -36,8 +36,8 @@ pub struct Args {
 fn main() {
     let args = Args::parse();
     let dimensions = (args.width, args.height);
-    let (scene, camera) = parse_scene(&args.scene_path, dimensions).unwrap();
-    let image = render(scene, camera, dimensions, 100, 0);
+    let (scene, camera) = parse_scene(&args.scene, dimensions).unwrap();
+    let image = render(scene, camera, dimensions, 100, 100);
     write_to_file("test", image, OutputFormat::PNG, dimensions).unwrap();
 }
 
