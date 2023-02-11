@@ -45,8 +45,11 @@ impl Object for Sphere {
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 { return None; }
 
-        let close_root = (-half_b - discriminant.sqrt()) / a;
-        let far_root = (-half_b + discriminant.sqrt()) / a;
+        let mut close_root = (-half_b - discriminant.sqrt()) / a;
+        let mut far_root = (-half_b + discriminant.sqrt()) / a;
+        if close_root > far_root {
+            std::mem::swap(&mut close_root, &mut far_root);
+        }
 
         let mut t = vec![];
         if close_root < t_max && close_root > t_min {

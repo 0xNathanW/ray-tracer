@@ -44,16 +44,16 @@ impl Scene {
     pub fn colour_at(&self, ray: &Ray, depth: usize) -> Colour {
 
         let mut hits = self.hit(&ray, -0.0001, f64::INFINITY);
+        if hits.is_empty() { return self.background; }
+
         compute_intersections(&mut hits);
         // TODO: doesnt need to be an iterator.
-        for hit in hits {
-
+        if let Some(hit) = hits.first() {
             let in_shadow = self.is_shadowed(&hit.over_point);
-
+            
             let surface_colour = hit.material.light(&self.lights[0], &hit, in_shadow);
             let reflected_colour = self.reflected_colour_at(&hit.material, &hit, depth);
             let refracted_colour = self.refracted_colour_at(&hit.material, &hit, depth);
-
             if hit.material.reflect > 0.0 && hit.material.transparency > 0.0 {
                 let reflectance = hit.schlick();
                 return surface_colour + reflected_colour * reflectance + refracted_colour * (1.0 - reflectance);
@@ -103,15 +103,10 @@ impl Scene {
         let direction = shadow_vec.normalize();
 
         let shadow_ray = Ray::new(*point, direction);
-        let hits = self.hit(&shadow_ray, 0.001, f64::INFINITY);
+        let hits = self.hit(&shadow_ray, 0.0001, f64::INFINITY);
         
-        if !hits.is_empty() {
-            let hit = &hits[0];
-            if hit.t < distance {
-                true
-            } else {
-                false
-            }
+        if let Some(hit) = hits.first() {
+            hit.t < distance
         } else {
             false
         }

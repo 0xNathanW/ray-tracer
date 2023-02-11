@@ -38,22 +38,21 @@ impl Cylinder {
         x.powi(2) + z.powi(2) <= 1.0
     }
 
-    fn hit_caps(&self, ray: &Ray) -> Vec<f64> {
+    fn hit_caps(&self, ray: &Ray, t_min: f64, t_max: f64) -> Vec<f64> {
         
         if !self.capped || ray.direction.y.abs() < 1e-8 {
             return vec![];
         };
-
-        let mut hits = vec![];
-        let t = (self.min - ray.origin.y) / ray.direction.y;
         
-        if Self::check_caps(ray, t) {
-            hits.push(t);
+        let mut hits = vec![];
+        let t0 = (self.min - ray.origin.y) / ray.direction.y;
+        if t0 >= t_min && t0 <= t_max && Self::check_caps(ray, t0) {
+                hits.push(t0);
         }
 
-        let t = (self.max - ray.origin.y) / ray.direction.y;
-        if Self::check_caps(ray, t) {
-            hits.push(t);
+        let t1 = (self.max - ray.origin.y) / ray.direction.y;
+        if t1 >= t_min && t1 <= t_max && Self::check_caps(ray, t1) {
+                hits.push(t1);
         }
         hits
     }
@@ -67,7 +66,7 @@ impl Object for Cylinder {
         let a = obj_ray.direction.x.powi(2) + obj_ray.direction.z.powi(2);
         // No wall intersections.
         if a.abs() < 1e-8 {
-            let t = self.hit_caps(obj_ray);
+            let t = self.hit_caps(obj_ray, t_min, t_max);
             return if t.is_empty() { None } else { Some(t) }
         }
 
@@ -85,20 +84,21 @@ impl Object for Cylinder {
             std::mem::swap(&mut close, &mut far);
         }
 
-        let max = self.max.min(t_max);
-        let min = self.min.max(t_min);
-
         let mut t = vec![];
-        let y0 = obj_ray.origin.y + close * obj_ray.direction.y;
-        if y0 < max && y0 > min {
-            t.push(close);
+        if close > t_min && close < t_max {
+            let y0 = obj_ray.origin.y + close * obj_ray.direction.y;
+            if y0 < self.max && y0 > self.min {
+                t.push(close);
+            }
         }
-        let y1 = obj_ray.origin.y + far * obj_ray.direction.y;
-        if y1 < max && y1 > min {
-            t.push(far);
+        if far > t_min && far < t_max {
+            let y1 = obj_ray.origin.y + far * obj_ray.direction.y;
+            if y1 < self.max && y1 > self.min {
+                t.push(far);
+            }
         }
 
-        t.extend(self.hit_caps(obj_ray));
+        t.extend(self.hit_caps(obj_ray, t_min, t_max));
         if t.is_empty() { None } else { Some(t) }
     }
 

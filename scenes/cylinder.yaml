@@ -1,10 +1,43 @@
 camera:
   look_from: [0, 5, -5]
-  look_at: [0, 0, 10]
+  look_at: [0, 1.5, 10]
+  vfov: 45
+  
 
 objects:
-  - type:
+  - type: !Cylinder
+      min: 0
+      max: 5
+      closed: true
+    material: !Metal
+      colour: [0, 1, 0]
+    transform:
+      - !Translate [0, 0, 10]
+      - !Scale [2, 1, 2]
+
+  - type: !Sphere
+    material: !Custom
+      specular: 0
+      reflective: 0.5
+      pattern:
+        type: !Checkers
+        colour_a: [1, 1, 1]
+        colour_b: [0, 0, 0]
+        transform:
+          - !Scale_uniform 0.005
+          - !Translate [15, 20, 0]
+    transform:
+      - !Translate [0, -1000, 0]
+      - !Scale_uniform 1000
+
+  - type: !Sphere
+    material: !Plastic
+      colour: [1, 0, 0]
+    transform:
+      - !Translate [5, 2, 10]
+      - !Scale_uniform 2
 
 lights:
-  - position: [10, 20, -5]
+  - position: [0, 10, -10]
     colour: [1, 1, 1]
+  

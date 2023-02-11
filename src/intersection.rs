@@ -53,9 +53,8 @@ impl Intersection {
 
 pub fn compute_intersections(hits: &mut Vec<Intersection>) {
     
-    hits.sort_unstable_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-    hits.iter_mut()
-        .enumerate()
+    hits.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+    hits.iter_mut().enumerate()
         .for_each(|(i, hit)| hit.id = i);
 
     let r_map: HashMap<usize, f64> = hits.iter()
