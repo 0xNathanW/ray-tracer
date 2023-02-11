@@ -4,13 +4,13 @@ use crate::transform::Transformable;
 
 #[derive(Debug)]
 pub struct Cone {
-    pub id: usize,
-    pub min: f64,
-    pub max: f64,
-    pub capped: bool,
-    pub transform: Matrix4,
-    pub inverse: Matrix4,
-    pub material: Arc<Material>,
+    pub id:         usize,
+    pub min:        f64,
+    pub max:        f64,
+    pub capped:     bool,
+    pub transform:  Matrix4,
+    pub inverse:    Matrix4,
+    pub material:   Arc<Material>,
 }
 
 impl Default for Cone {
@@ -35,25 +35,26 @@ impl Cone {
     fn check_caps(ray: &Ray, t: f64) -> bool {
         let x = ray.origin.x + t * ray.direction.x;
         let z = ray.origin.z + t * ray.direction.z;
-        x.powi(2) + z.powi(2) <= 1.0
+        let y = ray.origin.y + t * ray.direction.y;
+
+        x.powi(2) + z.powi(2) <= y.abs()
     }
 
-    fn hit_caps(&self, ray: &Ray) -> Vec<f64> {
+    fn hit_caps(&self, ray: &Ray, t_min: f64, t_max: f64) -> Vec<f64> {
         
         if !self.capped || ray.direction.y.abs() < 1e-8 {
             return vec![];
         };
-
-        let mut hits = vec![];
-        let t = (self.min - ray.origin.y) / ray.direction.y;
         
-        if Self::check_caps(ray, t) {
-            hits.push(t);
+        let mut hits = vec![];
+        let close = (self.min - ray.origin.y) / ray.direction.y;
+        if close >= t_min && close <= t_max && Self::check_caps(ray, close) {
+                hits.push(close);
         }
 
-        let t = (self.max - ray.origin.y) / ray.direction.y;
-        if Self::check_caps(ray, t) {
-            hits.push(t);
+        let far = (self.max - ray.origin.y) / ray.direction.y;
+        if far >= t_min && far <= t_max && Self::check_caps(ray, far) {
+                hits.push(far);
         }
         hits
     }
@@ -62,45 +63,49 @@ impl Cone {
 impl Object for Cone {
 
     fn hit_obj(&self, obj_ray: &Ray, t_min: f64, t_max: f64) -> Option<Vec<f64>> {
-        
-        let mut hits = vec![];
 
         let a = obj_ray.direction.x.powi(2) - obj_ray.direction.y.powi(2) + obj_ray.direction.z.powi(2);
         let b = 2.0 * obj_ray.origin.x * obj_ray.direction.x 
-                   - 2.0 * obj_ray.origin.y * obj_ray.direction.y 
-                   + 2.0 * obj_ray.origin.z * obj_ray.direction.z;
+        - 2.0 * obj_ray.origin.y * obj_ray.direction.y 
+        + 2.0 * obj_ray.origin.z * obj_ray.direction.z;
         let c = obj_ray.origin.x.powi(2) - obj_ray.origin.y.powi(2) + obj_ray.origin.z.powi(2);
-
+        
         if a.abs() < 1e-8 {
             if b.abs() < 1e-8 {
                 return None;
             }
             let t = -c / (2.0 * b);
-            hits.push(t);
+            if t > t_min && t < t_max {
+                return Some(vec![t]);
+            }
         }
-
+        
         let disc = b.powi(2) - 4.0 * a * c;
         if disc < 0.0 {
             return None;
         }
-
-        let mut t0 = (-b - disc.sqrt()) / (2.0 * a);
-        let mut t1 = (-b + disc.sqrt()) / (2.0 * a);
-        if t0 > t1 {
-            std::mem::swap(&mut t0, &mut t1);
+        
+        let mut hits = vec![];
+        let mut close = (-b - disc.sqrt()) / (2.0 * a);
+        let mut far = (-b + disc.sqrt()) / (2.0 * a);
+        if close > far {
+            std::mem::swap(&mut close, &mut far);
         }
 
-        let y0 = obj_ray.origin.y + t0 * obj_ray.direction.y;
-        if self.min < y0 && y0 < self.max {
-            hits.push(t0);
+        if close > t_min && close < t_max {
+            let y0 = obj_ray.origin.y + close * obj_ray.direction.y;
+            if self.min < y0 && y0 < self.max {
+                hits.push(close);
+            }
+        }
+        if far > t_min && far < t_max {
+            let y1 = obj_ray.origin.y + far * obj_ray.direction.y;
+            if self.min < y1 && y1 < self.max {
+                hits.push(far);
+            }
         }
 
-        let y1 = obj_ray.origin.y + t1 * obj_ray.direction.y;
-        if self.min < y1 && y1 < self.max {
-            hits.push(t1);
-        }
-
-        hits.extend(self.hit_caps(obj_ray));
+        hits.extend(self.hit_caps(obj_ray, t_min, t_max));
         if hits.is_empty() { None } else { Some(hits) }
     }
 

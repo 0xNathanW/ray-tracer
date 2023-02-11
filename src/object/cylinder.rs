@@ -84,22 +84,22 @@ impl Object for Cylinder {
             std::mem::swap(&mut close, &mut far);
         }
 
-        let mut t = vec![];
+        let mut hits = vec![];
         if close > t_min && close < t_max {
             let y0 = obj_ray.origin.y + close * obj_ray.direction.y;
             if y0 < self.max && y0 > self.min {
-                t.push(close);
+                hits.push(close);
             }
         }
         if far > t_min && far < t_max {
             let y1 = obj_ray.origin.y + far * obj_ray.direction.y;
             if y1 < self.max && y1 > self.min {
-                t.push(far);
+                hits.push(far);
             }
         }
 
-        t.extend(self.hit_caps(obj_ray, t_min, t_max));
-        if t.is_empty() { None } else { Some(t) }
+        hits.extend(self.hit_caps(obj_ray, t_min, t_max));
+        if hits.is_empty() { None } else { Some(hits) }
     }
 
     fn normal_obj(&self, point: &Point3) -> Vec3 {
