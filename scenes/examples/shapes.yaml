@@ -1,0 +1,21 @@
+camera:
+  look_from: [2, 1, -6]
+  look_at: [-2, 0, 5]
+  vup: [0, 1, 0]
+  vfov: 90
+
+objects:
+
+- type: !Box
+  material: !Custom
+    specular: 0
+    pattern:
+      type: !Checkers
+      colour_a: [1, 0, 0]
+      colour_b: [1, 1, 1]
+      transform:
+        - !Scale_uniform 1
+
+lights:
+  - position: [0, 10, -10]
+    colour: [1, 1, 1]

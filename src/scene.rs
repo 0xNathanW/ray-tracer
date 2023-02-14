@@ -49,11 +49,13 @@ impl Scene {
         compute_intersections(&mut hits);
         // TODO: doesnt need to be an iterator.
         if let Some(hit) = hits.first() {
+            return hit.colour;
             let in_shadow = self.is_shadowed(&hit.over_point);
-            
+
             let surface_colour = hit.material.light(&self.lights[0], &hit, in_shadow);
             let reflected_colour = self.reflected_colour_at(&hit.material, &hit, depth);
             let refracted_colour = self.refracted_colour_at(&hit.material, &hit, depth);
+            // println!("{:?} {:?} {:?}", surface_colour, reflected_colour, refracted_colour);
             if hit.material.reflect > 0.0 && hit.material.transparency > 0.0 {
                 let reflectance = hit.schlick();
                 return surface_colour + reflected_colour * reflectance + refracted_colour * (1.0 - reflectance);

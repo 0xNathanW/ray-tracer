@@ -155,7 +155,6 @@ impl Transformable for Cone {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::math::*;
 
     #[test]
     fn test_cone_hit() {
@@ -171,8 +170,6 @@ mod tests {
         println!("{:?}", t[0].t);
         // assert!(fuzzy_eq_f64(t[0].t, 8.66025));
         // assert!(fuzzy_eq_f64(t[1].t, 8.66025));
-
-
     }
 
 

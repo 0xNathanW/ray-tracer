@@ -9,7 +9,7 @@ objects:
 
   # Reflective ball
   - type: !Sphere
-    material:
+    material: !Custom
       colour: [1, 0.2, 1]
       reflective: 0.5
       specular: 1
@@ -19,7 +19,7 @@ objects:
       - !Scale_uniform 4
 
   - type: !Plane
-    material:
+    material: !Custom
       colour: [0.5, 0.5, 0.5]
       pattern:
         type: !Checkers

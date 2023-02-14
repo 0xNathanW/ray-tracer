@@ -335,7 +335,7 @@ fn background_default() -> (f64, f64, f64) {
 fn camera_default() -> CameraInputs {
     CameraInputs {
         look_from: (0.0, 5.0, 0.0),
-        look_at: (0.0, 0.0, 5.0),
+        look_at: (0.0, 0.0, 10.0),
         vup: (0.0, 1.0, 0.0),
         vfov: 90.0,
         aperture: 0.0,
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_input_from_file() {
-        let a: Inputs = serde_yaml::from_slice(&read("scenes/test_input.yaml").unwrap()).unwrap();
+        let a: Inputs = serde_yaml::from_slice(&read("scenes/tests/test_input.yaml").unwrap()).unwrap();
         
         assert_eq!(a.camera.look_from, (0.0, 0.0, 2.0));
         assert_eq!(a.camera.vfov, 15.0);

@@ -141,6 +141,7 @@ impl Material {
 
             (diffuse, specular)
         };
+
         ambient + diffuse + specular
     }
 

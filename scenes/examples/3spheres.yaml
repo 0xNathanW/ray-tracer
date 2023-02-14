@@ -9,7 +9,7 @@ objects:
 
   # Reflective ball
   - type: !Sphere
-    material:
+    material: !Custom
       colour: [1, 0.2, 1]
       reflective: 0.5
       specular: 1
@@ -20,7 +20,7 @@ objects:
 
   # Default
   - type: !Sphere
-    material:
+    material: !Custom
       colour: [0, 1, 0]
       diffuse: 1
       specular: 0
@@ -30,34 +30,20 @@ objects:
 
   # Glass 
   - type: !Sphere
-    material:
-      specular: 0
-      diffuse: 0
-      ambient: 0
-      shininess: 0
-      reflect: 1
-      transparency: 1
-      refractive_index: 1.52
+    material: !Glass
     transform:
       - !Translate [-8, 4, 30]
       - !Scale_uniform 4
 
   # Glass inside glass
   - type: !Sphere
-    material:
-      specular: 0
-      diffuse: 0
-      ambient: 0
-      shininess: 0
-      reflect: 1
-      transparency: 1
-      refractive_index: 1.52
+    material: !Glass
     transform:
       - !Translate [-8, 4, 30]
       - !Scale_uniform 2
 
   - type: !Sphere
-    material:
+    material: !Custom
       specular: 0
       reflective: 0.5
       pattern:

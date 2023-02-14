@@ -9,6 +9,7 @@ pub mod material;
 pub mod light;
 pub mod render;
 pub mod pattern;
+pub mod group;
 mod intersection;
 mod transform;
 mod math;
@@ -33,21 +34,8 @@ pub type Rotation     = nalgebra::geometry::Rotation3<f64>;
 pub type Transform    = nalgebra::geometry::Transform3<f64>;
 pub type Scale        = nalgebra::geometry::Scale3<f64>;
 
-pub enum Axis {
-    X,
-    Y,
-    Z,
-}
+pub enum Axis { X, Y, Z }
 
 pub fn default_dims() -> (u32, u32) {
     (1280, 720)
-}
-
-#[cfg(test)]
-mod random_tests {
-
-    #[test]
-    fn it_works() {
-    
-    }
 }
