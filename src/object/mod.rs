@@ -49,7 +49,7 @@ pub trait Object: Transformable + Send + Sync + Debug {
                 // TODO: See what happens if we change epsilon.
                 let over_point = point + normal * 0.0001;
                 let under_point = point - normal * 0.0001;
-                let colour = self.material().colour_at(&point, self.inverse());
+                let colour = self.material().colour_at(&over_point, self.inverse());
 
                 intersections.push(Intersection {
                     id: 0,

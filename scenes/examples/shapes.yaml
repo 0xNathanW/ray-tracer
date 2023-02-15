@@ -1,6 +1,6 @@
 camera:
-  look_from: [2, 1, -6]
-  look_at: [-2, 0, 5]
+  look_from: [0, 5, 0]
+  look_at: [0, 0, 10]
   vup: [0, 1, 0]
   vfov: 90
 
@@ -9,13 +9,53 @@ objects:
 - type: !Box
   material: !Custom
     specular: 0
-    pattern:
+    colour: [0, 0.3, 0.6]
+    pattern: 
       type: !Checkers
-      colour_a: [1, 0, 0]
-      colour_b: [1, 1, 1]
+      colour_a: [1, 1, 1]
+      colour_b: [0, 0, 0]
       transform:
-        - !Scale_uniform 1
+        - !Scale_uniform 0.2
+  transform:
+    - !Scale_uniform 100
+    - !Rotate_y 45
+
+- type: !Box
+  material: !Plastic
+    colour: [1, 0, 0]
+  transform:
+    - !Translate [0, 0, 10]
+    - !Scale_uniform 2
+    - !Rotate_y 60
+
+- type: !Sphere
+  material: !Custom
+    colour: [0, 0, 0]
+    reflective: 0.9
+  transform:
+    - !Translate [-4, 0, 8]
+    - !Scale_uniform 2
+
+- type: !Cylinder
+    min: 0
+    max: 2
+    closed: true
+  material: !Plastic
+    colour: [0.5, 0.7, 1]
+  transform:
+    - !Translate [0, 3, 10]
+    - !Scale [2, 0.5, 2]
+
+- type: !Cone
+    min: 0
+    max: 2
+    closed: false
+  material: !Plastic
+    colour: [0, 1, 0]
+  transform:
+    - !Translate [4, -2, 7]
+    - !Scale [1, 2, 1]
 
 lights:
-  - position: [0, 10, -10]
+  - position: [-10, 15, -10]
     colour: [1, 1, 1]
