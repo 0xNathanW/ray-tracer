@@ -27,9 +27,12 @@ Options:
 look for examples in ./scenes/examples
 ```
 types
+
 - Vector: [f64, f64, f64]
+
 - Colour: [f64, f64, f64]
     - colour in rgb format
+
 - Object: enum
     - !Sphere
     - !Plane
@@ -47,40 +50,43 @@ types
     - max: f64
         - default: infinity
     - closed: boolean
+
 - Material: enum
     - !Glass
     - !Metal
-    - colour: Colour
-    - pattern: Option<Pattern>
+        - colour: Colour
+        - pattern: Option<Pattern>
     - !Plastic
-    - colour: Colour
-    - pattern: Option<Pattern>
+        - colour: Colour
+        - pattern: Option<Pattern>
     - !Custom
-    - colour: Colour
-    - pattern: Option<Pattern>
-    - ambient: f64
-        - default: 0.1
-    - diffuse: f64
-        - default: 0.9
-    - specular: f64
-        - default: 0.9
-    - shininess: f64
-        - default: 200.0
-    - reflective: f64
-        - default: 0.0
-    - transparency: f64
-        - default: 0.0
-    - refractive_index: f64
-        - default: 1.0
+        - colour: Colour
+        - pattern: Option<Pattern>
+        - ambient: f64
+            - default: 0.1
+        - diffuse: f64
+            - default: 0.9
+        - specular: f64
+            - default: 0.9
+        - shininess: f64
+            - default: 200.0
+        - reflective: f64
+            - default: 0.0
+        - transparency: f64
+            - default: 0.0
+        - refractive_index: f64
+            - default: 1.0
+
 - Pattern:
     - type: enum
-    - !Stripes
-    - !Gradient
-    - !Rings
-    - !Checkers
-    - colour_a: Colour
-    - colour_b: Colour
-    - transform: Option<List<Transform>>
+        - !Stripes
+        - !Gradient
+        - !Rings
+        - !Checkers
+            - colour_a: Colour
+            - colour_b: Colour
+            - transform: Option<List<Transform>>
+
 - Transform: enum
     - !Translate: Vector
     - !Scale: Vector
@@ -91,29 +97,29 @@ types
 
 A scene can be defined by a .yaml file.
 - camera:
-  - look_from: Vector
-    - default: [0.0, 0.0, 0.0]
-  - look_at: Vector
-    - default: [0.0, 0.0, -1.0]
-  - vup: Vector
-    - default: [0.0, 1.0, 0.0]
-    - vector considered to be "upwards"
-  - vfov: f64
-    - default: 90.0
-    - field of view
-  - aperture: integer
-    - default: 0
-    - size of the lens, bigger is more light, smaller less light
+    - look_from: Vector
+        - default: [0.0, 0.0, 0.0]
+    - look_at: Vector
+        - default: [0.0, 0.0, -1.0]
+    - vup: Vector
+        - default: [0.0, 1.0, 0.0]
+        - vector considered to be "upwards"
+    - vfov: f64
+        - default: 90.0
+        - field of view
+    - aperture: integer
+        - default: 0
+        - size of the lens, bigger is more light, smaller less light
   
 - Background: Colour
 
 - Lights (list)
-  - position: Vector
-  - colour: Colour
+    - position: Vector
+    - colour: Colour
 
 - Objects (list)
-  - type: Object
-  - material: Material
-  - transform: Option<List<Transform>>
+    - type: Object
+    - material: Material
+    - transform: Option<List<Transform>>
   
 ```
