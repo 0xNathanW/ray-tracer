@@ -1,3 +1,4 @@
+use anyhow::Context;
 use clap::Parser;
 use ray_tracer::OutputFormat;
 use ray_tracer::render;
@@ -33,12 +34,13 @@ pub struct Args {
     pub max_depth: u32,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let dimensions = (args.width, args.height);
-    let (scene, camera) = parse_scene(&args.scene, dimensions).unwrap();
+    let (scene, camera) = parse_scene(&args.scene, dimensions).context("failed to parse scene")?;
     let image = render(scene, camera, dimensions, 100, 100);
-    write_to_file("test", image, OutputFormat::PNG, dimensions).unwrap();
+    write_to_file(&args.image_name, image, OutputFormat::PNG, dimensions).context("failed to write to file")?;
+    Ok(())
 }
 
 
